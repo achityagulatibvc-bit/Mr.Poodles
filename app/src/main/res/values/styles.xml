@@ -1,0 +1,13 @@
+<resources>
+    <style name="Theme.Poodles" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:colorAccent">#A54269</item>
+        <item name="android:windowBackground">#FFF9F3</item>
+    </style>
+    <style name="Theme.Poodles.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#FFF9F3</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_poodles</item>
+        <item name="postSplashScreenTheme">@style/Theme.Poodles</item>
+    </style>
+</resources>

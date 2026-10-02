@@ -1,0 +1,20 @@
+[
+  {"id":"oats","name":"Plain oats","fdcId":169705,"tags":["oats"],"ready":false},
+  {"id":"banana","name":"Banana","fdcId":173944,"tags":["banana"],"ready":true},
+  {"id":"apple","name":"Apple with skin","fdcId":171688,"tags":["apple"],"ready":true},
+  {"id":"peanut","name":"Plain peanut butter","fdcId":172470,"tags":["peanut"],"ready":true},
+  {"id":"chia","name":"Chia seeds","fdcId":170554,"tags":["chia"],"ready":false},
+  {"id":"cucumber","name":"Cucumber","fdcId":168409,"tags":["cucumber"],"ready":true},
+  {"id":"tomato","name":"Tomato","fdcId":170457,"tags":["tomato"],"ready":true},
+  {"id":"chickpea","name":"Canned chickpeas, drained and rinsed","fdcId":173801,"tags":["chickpea"],"ready":true},
+  {"id":"lentil","name":"Plain lentils, already boiled","fdcId":172421,"tags":["lentil"],"ready":true},
+  {"id":"rice","name":"Plain white rice, already cooked","fdcId":168878,"tags":["rice"],"ready":true},
+  {"id":"oil","name":"Olive oil","fdcId":171413,"tags":["olive"],"ready":true},
+  {"id":"bread","name":"Whole-wheat bread (check package)","fdcId":172688,"tags":["wheat","gluten"],"ready":true},
+  {"id":"egg","name":"Egg, already hard-boiled","fdcId":173424,"tags":["egg"],"ready":true},
+  {"id":"chicken","name":"Chicken breast, already roasted","fdcId":171477,"tags":["chicken","meat"],"ready":true},
+  {"id":"spinach","name":"Raw spinach","fdcId":168462,"tags":["spinach"],"ready":true},
+  {"id":"lemon","name":"Lemon juice","fdcId":167747,"tags":["lemon","citrus"],"ready":true},
+  {"id":"yogurt","name":"Plain dairy yogurt","fdcId":171284,"tags":["milk","lactose"],"ready":true},
+  {"id":"tofu","name":"Firm tofu (follow package preparation)","fdcId":172475,"tags":["soy","soya"],"ready":false}
+]

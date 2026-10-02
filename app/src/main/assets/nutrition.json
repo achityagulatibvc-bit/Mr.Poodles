@@ -1,0 +1,295 @@
+[
+  {
+    "id": "oats",
+    "name": "Plain oats",
+    "fdcId": 169705,
+    "tags": [
+      "oats"
+    ],
+    "ready": false,
+    "description": "Oats (Includes foods for USDA's Food Distribution Program)",
+    "kcal": 389,
+    "protein": 16.9,
+    "carbs": 66.3,
+    "fat": 6.9,
+    "fiber": 10.6,
+    "source": "https://fdc.nal.usda.gov/food-details/169705/nutrients"
+  },
+  {
+    "id": "banana",
+    "name": "Banana",
+    "fdcId": 173944,
+    "tags": [
+      "banana"
+    ],
+    "ready": true,
+    "description": "Bananas, raw",
+    "kcal": 89.0,
+    "protein": 1.09,
+    "carbs": 22.8,
+    "fat": 0.33,
+    "fiber": 2.6,
+    "source": "https://fdc.nal.usda.gov/food-details/173944/nutrients"
+  },
+  {
+    "id": "apple",
+    "name": "Apple with skin",
+    "fdcId": 171688,
+    "tags": [
+      "apple"
+    ],
+    "ready": true,
+    "description": "Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)",
+    "kcal": 52.0,
+    "protein": 0.26,
+    "carbs": 13.8,
+    "fat": 0.17,
+    "fiber": 2.4,
+    "source": "https://fdc.nal.usda.gov/food-details/171688/nutrients"
+  },
+  {
+    "id": "peanut",
+    "name": "Plain peanut butter",
+    "fdcId": 172470,
+    "tags": [
+      "peanut"
+    ],
+    "ready": true,
+    "description": "Peanut butter, smooth style, without salt",
+    "kcal": 598,
+    "protein": 22.2,
+    "carbs": 22.3,
+    "fat": 51.4,
+    "fiber": 5.0,
+    "source": "https://fdc.nal.usda.gov/food-details/172470/nutrients"
+  },
+  {
+    "id": "chia",
+    "name": "Chia seeds",
+    "fdcId": 170554,
+    "tags": [
+      "chia"
+    ],
+    "ready": false,
+    "description": "Seeds, chia seeds, dried",
+    "kcal": 486,
+    "protein": 16.5,
+    "carbs": 42.1,
+    "fat": 30.7,
+    "fiber": 34.4,
+    "source": "https://fdc.nal.usda.gov/food-details/170554/nutrients"
+  },
+  {
+    "id": "cucumber",
+    "name": "Cucumber",
+    "fdcId": 168409,
+    "tags": [
+      "cucumber"
+    ],
+    "ready": true,
+    "description": "Cucumber, with peel, raw",
+    "kcal": 15.0,
+    "protein": 0.65,
+    "carbs": 3.63,
+    "fat": 0.11,
+    "fiber": 0.5,
+    "source": "https://fdc.nal.usda.gov/food-details/168409/nutrients"
+  },
+  {
+    "id": "tomato",
+    "name": "Tomato",
+    "fdcId": 170457,
+    "tags": [
+      "tomato"
+    ],
+    "ready": true,
+    "description": "Tomatoes, red, ripe, raw, year round average",
+    "kcal": 18.0,
+    "protein": 0.88,
+    "carbs": 3.89,
+    "fat": 0.2,
+    "fiber": 1.2,
+    "source": "https://fdc.nal.usda.gov/food-details/170457/nutrients"
+  },
+  {
+    "id": "chickpea",
+    "name": "Canned chickpeas, drained and rinsed",
+    "fdcId": 173801,
+    "tags": [
+      "chickpea"
+    ],
+    "ready": true,
+    "description": "Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained, rinsed in tap water",
+    "kcal": 138,
+    "protein": 7.04,
+    "carbs": 22.9,
+    "fat": 2.47,
+    "fiber": 6.3,
+    "source": "https://fdc.nal.usda.gov/food-details/173801/nutrients"
+  },
+  {
+    "id": "lentil",
+    "name": "Plain lentils, already boiled",
+    "fdcId": 172421,
+    "tags": [
+      "lentil"
+    ],
+    "ready": true,
+    "description": "Lentils, mature seeds, cooked, boiled, without salt",
+    "kcal": 116,
+    "protein": 9.02,
+    "carbs": 20.1,
+    "fat": 0.38,
+    "fiber": 7.9,
+    "source": "https://fdc.nal.usda.gov/food-details/172421/nutrients"
+  },
+  {
+    "id": "rice",
+    "name": "Plain white rice, already cooked",
+    "fdcId": 168878,
+    "tags": [
+      "rice"
+    ],
+    "ready": true,
+    "description": "Rice, white, long-grain, regular, enriched, cooked",
+    "kcal": 130,
+    "protein": 2.69,
+    "carbs": 28.2,
+    "fat": 0.28,
+    "fiber": 0.4,
+    "source": "https://fdc.nal.usda.gov/food-details/168878/nutrients"
+  },
+  {
+    "id": "oil",
+    "name": "Olive oil",
+    "fdcId": 171413,
+    "tags": [
+      "olive"
+    ],
+    "ready": true,
+    "description": "Oil, olive, salad or cooking",
+    "kcal": 884,
+    "protein": 0.0,
+    "carbs": 0.0,
+    "fat": 100,
+    "fiber": 0.0,
+    "source": "https://fdc.nal.usda.gov/food-details/171413/nutrients"
+  },
+  {
+    "id": "bread",
+    "name": "Whole-wheat bread (check package)",
+    "fdcId": 172688,
+    "tags": [
+      "wheat",
+      "gluten"
+    ],
+    "ready": true,
+    "description": "Bread, whole-wheat, commercially prepared",
+    "kcal": 252,
+    "protein": 12.4,
+    "carbs": 42.7,
+    "fat": 3.5,
+    "fiber": 6.0,
+    "source": "https://fdc.nal.usda.gov/food-details/172688/nutrients"
+  },
+  {
+    "id": "egg",
+    "name": "Egg, already hard-boiled",
+    "fdcId": 173424,
+    "tags": [
+      "egg"
+    ],
+    "ready": true,
+    "description": "Egg, whole, cooked, hard-boiled",
+    "kcal": 155,
+    "protein": 12.6,
+    "carbs": 1.12,
+    "fat": 10.6,
+    "fiber": 0.0,
+    "source": "https://fdc.nal.usda.gov/food-details/173424/nutrients"
+  },
+  {
+    "id": "chicken",
+    "name": "Chicken breast, already roasted",
+    "fdcId": 171477,
+    "tags": [
+      "chicken",
+      "meat"
+    ],
+    "ready": true,
+    "description": "Chicken, broilers or fryers, breast, meat only, cooked, roasted",
+    "kcal": 165,
+    "protein": 31.0,
+    "carbs": 0.0,
+    "fat": 3.57,
+    "fiber": 0.0,
+    "source": "https://fdc.nal.usda.gov/food-details/171477/nutrients"
+  },
+  {
+    "id": "spinach",
+    "name": "Raw spinach",
+    "fdcId": 168462,
+    "tags": [
+      "spinach"
+    ],
+    "ready": true,
+    "description": "Spinach, raw",
+    "kcal": 23.0,
+    "protein": 2.86,
+    "carbs": 3.63,
+    "fat": 0.39,
+    "fiber": 2.2,
+    "source": "https://fdc.nal.usda.gov/food-details/168462/nutrients"
+  },
+  {
+    "id": "lemon",
+    "name": "Lemon juice",
+    "fdcId": 167747,
+    "tags": [
+      "lemon",
+      "citrus"
+    ],
+    "ready": true,
+    "description": "Lemon juice, raw",
+    "kcal": 22.0,
+    "protein": 0.35,
+    "carbs": 6.9,
+    "fat": 0.24,
+    "fiber": 0.3,
+    "source": "https://fdc.nal.usda.gov/food-details/167747/nutrients"
+  },
+  {
+    "id": "yogurt",
+    "name": "Plain dairy yogurt",
+    "fdcId": 171284,
+    "tags": [
+      "milk",
+      "lactose"
+    ],
+    "ready": true,
+    "description": "Yogurt, plain, whole milk",
+    "kcal": 61.0,
+    "protein": 3.47,
+    "carbs": 4.66,
+    "fat": 3.25,
+    "fiber": 0.0,
+    "source": "https://fdc.nal.usda.gov/food-details/171284/nutrients"
+  },
+  {
+    "id": "tofu",
+    "name": "Firm tofu (follow package preparation)",
+    "fdcId": 172475,
+    "tags": [
+      "soy",
+      "soya"
+    ],
+    "ready": false,
+    "description": "Tofu, raw, firm, prepared with calcium sulfate",
+    "kcal": 144,
+    "protein": 17.3,
+    "carbs": 2.78,
+    "fat": 8.72,
+    "fiber": 2.3,
+    "source": "https://fdc.nal.usda.gov/food-details/172475/nutrients"
+  }
+]
