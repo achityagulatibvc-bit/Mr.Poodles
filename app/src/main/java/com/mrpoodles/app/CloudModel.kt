@@ -19,6 +19,7 @@ open class CloudModel {
     private val client = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(45, TimeUnit.SECONDS).callTimeout(90, TimeUnit.SECONDS).followRedirects(false).build()
     @Volatile private var currentCall: Call? = null
+    private val cooldowns = java.util.concurrent.ConcurrentHashMap<String, ServiceLimitException>()
     open fun cancel() { currentCall?.cancel() }
 
     open suspend fun generate(instructions: String, input: String, structured: Boolean, maxTokens: Int,
@@ -26,9 +27,12 @@ open class CloudModel {
         check(BuildConfig.BACKEND_URL.startsWith("https://") && BuildConfig.APP_ACCESS_TOKEN.length >= 32) {
             "Poodles' connection isn't ready in this version. Please ask for an updated copy."
         }
+        val bucket = ServiceLimits.bucket(task)
+        cooldowns.entries.removeIf { it.value.retryAt <= System.currentTimeMillis() }
+        (cooldowns["all"] ?: cooldowns[bucket])?.let { throw it }
         val streaming = task == "chat"
         val body = buildJsonObject {
-            put("task", if (structured) "structured" else task)
+            put("task", if (structured && task == "text") "structured" else task)
             put("instructions", instructions)
             put("input", input)
             put("maxTokens", maxTokens)
@@ -40,7 +44,7 @@ open class CloudModel {
             } } }
         }
         val request = Request.Builder().url(BuildConfig.BACKEND_URL.trimEnd('/') + "/v1/help")
-            .header("User-Agent", "MrPoodles/0.2 Android")
+            .header("User-Agent", "MrPoodles/0.3 Android")
             .header("Authorization", "Bearer ${BuildConfig.APP_ACCESS_TOKEN}")
             .post(body.toString().toRequestBody("application/json".toMediaType())).build()
         status(if (streaming) "Poodles is listening…" else "Putting a little thought into it…")
@@ -48,6 +52,11 @@ open class CloudModel {
         currentCall = call
         try {
             call.await().use { response ->
+                if (response.code == 429) {
+                    val limit = ServiceLimits.parse(response.header("X-Poodles-Limit"), response.header("Retry-After"))
+                    cooldowns[when { limit.scope == "provider_daily" -> "all"; limit.scope == "provider_minute" -> bucket; else -> limit.scope.substringBefore('_') }] = limit
+                    throw limit
+                }
                 if (!response.isSuccessful) throw IOException(friendlyHttpError(response.code, task == "vision"))
                 val content = response.body ?: throw IOException("The reply didn't arrive. Please try again.")
                 if (!streaming) {
@@ -86,6 +95,7 @@ open class CloudModel {
             }
         } catch (failure: IOException) {
             currentCoroutineContext().ensureActive()
+            if (failure is ServiceLimitException) throw failure
             throw IOException(if (failure.message in friendlyErrors) failure.message else "Poodles couldn't connect just now. Check your connection and try again.")
         } finally { if (currentCall === call) currentCall = null }
     }

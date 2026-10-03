@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 
 @Composable internal fun ChatScreen(state: ScreenState, vm: PoodlesViewModel) {
     var draft by rememberSaveable { mutableStateOf("") }
@@ -31,6 +32,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
     val list = rememberLazyListState()
     val keyboard = WindowInsets.isImeVisible
     val replying = state.busy && state.taskKind == "chat"
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(state.chatRetryAt) {
+        now = System.currentTimeMillis()
+        while (state.chatRetryAt > now) { delay(1000); now = System.currentTimeMillis() }
+    }
+    val coolingDown = state.chatRetryAt > now
     val stream by vm.stream.collectAsStateWithLifecycle()
     LaunchedEffect(state.data.messages.lastOrNull()?.id) {
         if (state.data.messages.lastOrNull()?.role == "You" && sent != null) {
@@ -101,7 +108,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
             if ((state.failedChat != null || state.chatError != null) && !replying) item("retry") {
                 CozyCard(color = Cream) {
                     Text(state.chatError ?: "Your message is still here.", style = MaterialTheme.typography.bodyMedium)
-                    if (state.failedChat != null) TextButton(vm::retryChat, enabled = !state.busy) { Text("Try reply again") }
+                    if (state.failedChat != null) TextButton(vm::retryChat, enabled = !state.busy && !coolingDown) {
+                        Text(if (coolingDown) "Retry in ${((state.chatRetryAt - now + 999) / 1000)}s" else "Try reply again")
+                    }
                 }
             }
             state.memoryNotice?.let { notice -> item("memory_notice") {
@@ -118,6 +127,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
         }
         Surface(color = Paper) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                if (coolingDown) Text("You can send again in ${((state.chatRetryAt - now + 999) / 1000)}s. Your draft stays here.", style = MaterialTheme.typography.bodySmall)
                 if (editProfile) Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Suggest a profile change", Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
                     TextButton({ editProfile = false }) { Text("Back to chat") }
@@ -130,7 +140,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
                         if (replying) vm.cancel()
                         else if (editProfile) vm.proposeChange(draft)
                         else { sent = draft; vm.chat(draft) }
-                    }, enabled = replying || (draft.isNotBlank() && !state.busy), modifier = Modifier.size(52.dp)) {
+                    }, enabled = replying || (draft.isNotBlank() && !state.busy && !coolingDown), modifier = Modifier.size(52.dp)) {
                         Icon(if (replying) Icons.Rounded.Stop else Icons.Rounded.ArrowUpward, if (replying) "Stop reply" else "Send to Poodles")
                     }
                 }

@@ -1,3 +1,2 @@
-# Local development only. Never paste provider keys into the Android project.
-OPENROUTER_API_KEY=replace-locally
+# Development only. Workers AI uses the AI binding, not an external provider key.
 APP_TOKEN_SHA256=replace-with-generated-hash

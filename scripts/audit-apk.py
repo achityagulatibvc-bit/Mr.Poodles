@@ -13,7 +13,7 @@ with zipfile.ZipFile(apk) as archive:
     assert archive.getinfo('assets/NOTICES.txt').file_size > 1000
     assert archive.getinfo('res/raw/poodles_chime.wav').file_size > 1000
     foods = json.loads(archive.read('assets/nutrition.json'))
-    assert len(foods) == 18
+    assert len(foods) == 34
     assert all(f['fdcId'] and f['source'].startswith('https://fdc.nal.usda.gov/') for f in foods)
     settings_file = root / '.poodles.properties'
     configured = False

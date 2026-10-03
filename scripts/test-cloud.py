@@ -22,20 +22,15 @@ except HTTPError as error:
     hints = {401: 'App token does not match the Worker hash.',
              403: 'Cloudflare blocked this client before the Worker ran (error 1010, browser-signature check).',
              429: 'Free quota is exhausted.',
-             503: 'Check Worker secrets, model availability and privacy-compatible free endpoints.'}
+             503: 'Check the AI binding, app credential and Workers AI availability.'}
     reasons = {
-        'provider_auth': 'Worker reached OpenRouter, but OpenRouter rejected its stored API key.',
-        'provider_account': 'OpenRouter account/credit restriction blocked the request.',
-        'privacy_endpoint_unavailable': 'No free model endpoint matches the required privacy policy.',
-        'provider_parameters': 'No endpoint supports the requested generation parameters.',
-        'model_endpoint_unavailable': 'Selected model or endpoint is unavailable.',
-        'provider_request': 'OpenRouter rejected the request format.',
-        'provider_access': 'OpenRouter denied model access.',
-        'not_ready': 'Worker is missing a required secret or quota binding.',
+        'not_ready': 'Worker is missing the AI binding, app credential or quota binding.',
+        'service_unavailable': 'Workers AI could not complete the request.',
         'free_limit': 'Free request allowance is exhausted.',
     }
     try:
         code = json.load(error).get('error', {}).get('code')
     except (ValueError, AttributeError):
         code = None
-    raise SystemExit(f'HTTP {error.code}. ' + reasons.get(code, hints.get(error.code, 'Review backend configuration.')))
+    scope = error.headers.get('X-Poodles-Limit', 'unknown')
+    raise SystemExit(f'HTTP {error.code}; allowance={scope}. ' + reasons.get(code, hints.get(error.code, 'Review backend configuration.')))

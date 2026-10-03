@@ -41,11 +41,12 @@ val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     val fat: Double? = null, val fiber: Double? = null, val source: String
 )
 @Serializable data class Ingredient(val id: String, val grams: Double)
+@Serializable data class PreparationStep(val action: String, val ingredients: List<String>)
 @Serializable data class Recipe(
     val title: String, val ingredients: List<Ingredient>, val method: String = "assemble",
     val minutes: Int = 10, val servings: Int = 1, val note: String = "",
     val id: String = UUID.randomUUID().toString(), val aiGenerated: Boolean = false,
-    val profileRevision: Int = 0
+    val profileRevision: Int = 0, val preparation: List<PreparationStep> = emptyList()
 )
 @Serializable data class Meal(val id: String = UUID.randomUUID().toString(), val date: String,
     val slot: String, val recipe: Recipe, val mode: String, val revision: Int)
@@ -62,7 +63,7 @@ val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     val meals: List<Meal> = emptyList(), val intake: List<Intake> = emptyList(),
     val recipes: List<Recipe> = emptyList(), val messages: List<Message> = emptyList(),
     val checks: List<CheckRecord> = emptyList(), val workout: Workout? = null,
-    val comfortMemories: List<ComfortMemory> = emptyList())
+    val comfortMemories: List<ComfortMemory> = emptyList(), val recentRecipes: List<Recipe> = emptyList())
 @Serializable data class ProfileProposal(val field: String, val value: String, val explanation: String = "")
 
 data class Finding(val trigger: String, val evidence: String, val note: String)
@@ -138,12 +139,37 @@ object RecipeRules {
         }
         if (recipe.ingredients.map { it.id }.distinct().size != recipe.ingredients.size) add("Duplicate ingredients.")
         if (recipe.ingredients.any { it.id == "chia" } && recipe.method != "soak") add("Chia must be fully soaked before eating.")
+        if (recipe.preparation.size > 8) add("Too many preparation steps.")
+        recipe.preparation.forEach { step ->
+            if (step.action !in setOf("cut", "mash", "mix", "layer", "spread", "warm", "soak")) add("Unknown preparation step.")
+            if (step.ingredients.isEmpty() || step.ingredients.any { id -> recipe.ingredients.none { it.id == id } }) add("Preparation references an ingredient outside the recipe.")
+            if (step.action == "warm" && recipe.method != "warm") add("Heating step needs a warming method.")
+            if (step.action == "soak" && recipe.method != "soak") add("Soaking step needs a soaking method.")
+        }
     }
-    fun steps(recipe: Recipe): String = when (recipe.method) {
+    fun steps(recipe: Recipe, foods: List<Food> = emptyList()): String {
+        val safety = when (recipe.method) {
         "soak" -> "Use food-grade rolled oats if oats are listed. Combine with enough drinking water to fully submerge the oats/seeds. Refrigerate for at least 4 hours; chia must be fully hydrated. Add washed fruit and other ready-to-eat ingredients before serving. Preparation time excludes soaking."
         "warm" -> "Use only the already-cooked ingredients listed. Wash produce. Warm the cooked ingredients on a stove or in a microwave until steaming throughout; stir well. Add washed raw produce and other ready-to-eat ingredients after warming. Do not cook food inside a water-only kettle."
         else -> "Wash produce. Use only ready-to-eat or fully cooked ingredients. Measure the listed amounts, cut into bite-sized pieces, and assemble. Check every packaged ingredient for your triggers."
-    } + " Keep perishable foods refrigerated. Do not use leftovers with uncertain storage history."
+        } + " Keep perishable foods refrigerated. Do not use leftovers with uncertain storage history."
+        if (recipe.preparation.isEmpty()) return safety
+        val specific = recipe.preparation.mapIndexed { index, step ->
+            val ingredients = step.ingredients.joinToString(", ") { id -> foods.find { it.id == id }?.name ?: id }
+            val action = when (step.action) {
+                "cut" -> "Wash and cut $ingredients into small pieces."
+                "mash" -> "Mash $ingredients with a fork."
+                "mix" -> "Gently combine $ingredients."
+                "layer" -> "Layer $ingredients in the listed order."
+                "spread" -> "Spread the first ingredient over the remaining ingredients: $ingredients."
+                "warm" -> "Warm $ingredients on a stove or in a microwave until steaming; stir well."
+                "soak" -> "Cover $ingredients with drinking water and refrigerate for at least 4 hours."
+                else -> "Review this preparation step."
+            }
+            "${index + 1}. $action"
+        }.joinToString("\n")
+        return "$specific\n\n$safety"
+    }
 }
 
 data class Exercise(val id: String, val name: String, val instruction: String, val seconds: Int, val equipment: String? = null)
@@ -167,10 +193,3 @@ object IntakeRules {
         it.id == entry.id || (entry.mealId != null && it.mealId == entry.mealId)
     } + entry
 }
-
-val starterRecipes = listOf(
-    Recipe("Banana overnight oats", listOf(Ingredient("oats", 45.0), Ingredient("banana", 100.0)), "soak", 5, id = "oat-banana"),
-    Recipe("Little chickpea garden", listOf(Ingredient("chickpea", 150.0), Ingredient("cucumber", 100.0), Ingredient("tomato", 80.0), Ingredient("oil", 5.0)), "assemble", 10, id = "chickpea-garden"),
-    Recipe("Apple & peanut picnic", listOf(Ingredient("apple", 150.0), Ingredient("peanut", 20.0)), "assemble", 5, id = "apple-picnic"),
-    Recipe("Comforting lentil bowl", listOf(Ingredient("lentil", 180.0), Ingredient("rice", 150.0), Ingredient("spinach", 40.0), Ingredient("oil", 5.0)), "warm", 15, id = "lentil-comfort")
-)

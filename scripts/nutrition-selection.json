@@ -16,5 +16,21 @@
   {"id":"spinach","name":"Raw spinach","fdcId":168462,"tags":["spinach"],"ready":true},
   {"id":"lemon","name":"Lemon juice","fdcId":167747,"tags":["lemon","citrus"],"ready":true},
   {"id":"yogurt","name":"Plain dairy yogurt","fdcId":171284,"tags":["milk","lactose"],"ready":true},
-  {"id":"tofu","name":"Firm tofu (follow package preparation)","fdcId":172475,"tags":["soy","soya"],"ready":false}
+  {"id":"tofu","name":"Firm tofu (follow package preparation)","fdcId":172475,"tags":["soy","soya"],"ready":false},
+  {"id":"pasta","name":"Plain pasta, already cooked (check package)","fdcId":168928,"tags":["pasta","wheat","gluten"],"ready":true},
+  {"id":"potato","name":"Potato, already boiled","fdcId":170440,"tags":["potato"],"ready":true},
+  {"id":"pea","name":"Green peas, already boiled","fdcId":170420,"tags":["pea"],"ready":true},
+  {"id":"corn","name":"Canned sweetcorn, drained and rinsed","fdcId":168397,"tags":["corn"],"ready":true},
+  {"id":"carrot","name":"Raw carrot","fdcId":170393,"tags":["carrot"],"ready":true},
+  {"id":"kidneybean","name":"Canned kidney beans, drained and rinsed","fdcId":175243,"tags":["kidney bean","rajma"],"ready":true},
+  {"id":"mushroom","name":"Mushrooms, already cooked","fdcId":169252,"tags":["mushroom"],"ready":true},
+  {"id":"avocado","name":"Avocado","fdcId":171705,"tags":["avocado"],"ready":true},
+  {"id":"onion","name":"Raw onion","fdcId":170000,"tags":["onion"],"ready":true},
+  {"id":"cabbage","name":"Raw cabbage","fdcId":169975,"tags":["cabbage"],"ready":true},
+  {"id":"brownrice","name":"Brown rice, already cooked","fdcId":169704,"tags":["rice"],"ready":true},
+  {"id":"quinoa","name":"Quinoa, already cooked","fdcId":168917,"tags":["quinoa"],"ready":true},
+  {"id":"almond","name":"Plain almonds","fdcId":170567,"tags":["almond","tree nut"],"ready":true},
+  {"id":"orange","name":"Orange","fdcId":169097,"tags":["orange","citrus"],"ready":true},
+  {"id":"strawberry","name":"Strawberries","fdcId":167762,"tags":["strawberry"],"ready":true},
+  {"id":"sweetpotato","name":"Sweet potato, already boiled","fdcId":168484,"tags":["sweet potato"],"ready":true}
 ]

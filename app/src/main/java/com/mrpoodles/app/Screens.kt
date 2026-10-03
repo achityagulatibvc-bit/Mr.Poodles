@@ -232,16 +232,16 @@ private fun Double.pretty() = String.format(Locale.US, "%.0f", this)
                 CozyAction("Save this recipe", vm::saveDraft)
             }
             SectionTitle("Your recipe shelf")
-            Text("Choose a date and meal slot, then add a recipe. Starter recipes are clearly marked.", style = MaterialTheme.typography.bodySmall)
+            Text("Your saved AI creations. Choose a date and meal slot to add one to your plan.", style = MaterialTheme.typography.bodySmall)
             ChoiceRow("Meal", listOf("Breakfast", "Lunch", "Dinner", "Snack"), selectedSlot) { selectedSlot = it }
             Row(Modifier.horizontalScroll(rememberScrollState())) { repeat(7) { offset ->
                 val day = LocalDate.now().plusDays(offset.toLong())
                 FilterChip(selectedDate == day.toString(), { selectedDate = day.toString() }, label = { Text(day.format(DateTimeFormatter.ofPattern("EEE d"))) }, modifier = Modifier.padding(end = 6.dp))
             } }
-            (state.data.recipes + starterRecipes).forEach { recipe ->
+            state.data.recipes.forEach { recipe ->
                 val issues = RecipeRules.validate(recipe, state.data.profile, state.foods)
                 CozyCard {
-                    Text(if (recipe.aiGenerated) "AI RECIPE" else "STARTER RECIPE", color = Rose, style = MaterialTheme.typography.labelSmall)
+                    Text(if (recipe.aiGenerated) "CREATED FOR YOU" else "SAVED RECIPE", color = Rose, style = MaterialTheme.typography.labelSmall)
                     Text(recipe.title, style = MaterialTheme.typography.titleLarge)
                     Text("${Nutrition.calculate(recipe, state.foods).kcal.pretty()} kcal / serving · ${recipe.minutes} min active")
                     if (issues.isNotEmpty()) Text(issues.joinToString(" "), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -294,7 +294,7 @@ private fun Double.pretty() = String.format(Locale.US, "%.0f", this)
         recipe.ingredients.forEach { part -> val food = foods.first { it.id == part.id }; Text("${part.grams.pretty()} g · ${food.name}") }
         HorizontalDivider()
         Text("How to make it", style = MaterialTheme.typography.titleMedium)
-        Text(RecipeRules.steps(recipe))
+        Text(RecipeRules.steps(recipe, foods))
         if (recipe.note.isNotBlank()) Text("AI note: ${recipe.note}", style = MaterialTheme.typography.bodySmall)
         Text("Nutrition: USDA SR Legacy, April 2018; calculated estimates. Actual brands, preparation and portions differ.", style = MaterialTheme.typography.bodySmall)
         recipe.ingredients.map { foods.first { f -> f.id == it.id } }.forEach { Text("${it.name}: FDC ${it.fdcId}", style = MaterialTheme.typography.labelSmall) }
@@ -435,7 +435,7 @@ private fun Double.pretty() = String.format(Locale.US, "%.0f", this)
             }
             if (memories.isNotEmpty()) TextButton({ forget = "all" }) { Text("Forget comfort memories") }
             Text("Your privacy", style = MaterialTheme.typography.titleLarge)
-            Text("Messages, selected label photos and relevant preferences are sent through our service to an AI provider. Photo location metadata is removed. Poodles can make mistakes. Provider routing requires no data collection and zero retention.", style = MaterialTheme.typography.bodyMedium)
+            Text("Messages, selected label photos and relevant preferences are processed by Cloudflare's AI service. Photo location metadata is removed. The service does not use your content for training without consent, and our backend does not save chats or photos. Poodles can make mistakes.", style = MaterialTheme.typography.bodyMedium)
             SettingSwitch("Remember our chats", "Save conversation history on this phone between visits. You can clear it from Chat.", profile.rememberChats) { profile = profile.copy(rememberChats = it) }
             Spacer(Modifier.height(18.dp))
         }
@@ -526,7 +526,7 @@ private fun Double.pretty() = String.format(Locale.US, "%.0f", this)
     AlertDialog(onDismissRequest = dismiss, title = { Text("A private little companion") }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Poodles is an AI companion for everyday support. He can make mistakes and cannot provide a diagnosis or certify food safety.")
-            Text("Saved preferences and plans stay on this phone. Messages, selected photos and relevant context are processed through our service. Our backend does not deliberately log conversation contents. Provider routing requires no data collection and zero retention.")
+            Text("Saved preferences and plans stay on this phone. Messages, selected photos and relevant context are processed by Cloudflare's AI service. Our backend stores allowance counters, not chats or photos. Cloudflare does not use your content for training without consent.")
             Text("Saving chats and comfort memories is optional. You can review and delete them. Android backup is disabled.")
             Text("Label reading supports English, French, German, Spanish and Italian. Always review extracted text. Nutrition values are estimates from a small food reference.")
             Text("Removing the app deletes its private data. No cloud restore is available.", style = MaterialTheme.typography.bodySmall)

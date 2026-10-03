@@ -291,5 +291,266 @@
     "fat": 8.72,
     "fiber": 2.3,
     "source": "https://fdc.nal.usda.gov/food-details/172475/nutrients"
+  },
+  {
+    "id": "pasta",
+    "name": "Plain pasta, already cooked (check package)",
+    "fdcId": 168928,
+    "tags": [
+      "pasta",
+      "wheat",
+      "gluten"
+    ],
+    "ready": true,
+    "description": "Pasta, cooked, unenriched, without added salt",
+    "kcal": 158,
+    "protein": 5.8,
+    "carbs": 30.9,
+    "fat": 0.93,
+    "fiber": 1.8,
+    "source": "https://fdc.nal.usda.gov/food-details/168928/nutrients"
+  },
+  {
+    "id": "potato",
+    "name": "Potato, already boiled",
+    "fdcId": 170440,
+    "tags": [
+      "potato"
+    ],
+    "ready": true,
+    "description": "Potatoes, boiled, cooked without skin, flesh, without salt",
+    "kcal": 86.0,
+    "protein": 1.71,
+    "carbs": 20.0,
+    "fat": 0.1,
+    "fiber": 1.8,
+    "source": "https://fdc.nal.usda.gov/food-details/170440/nutrients"
+  },
+  {
+    "id": "pea",
+    "name": "Green peas, already boiled",
+    "fdcId": 170420,
+    "tags": [
+      "pea"
+    ],
+    "ready": true,
+    "description": "Peas, green, cooked, boiled, drained, without salt",
+    "kcal": 84.0,
+    "protein": 5.36,
+    "carbs": 15.6,
+    "fat": 0.22,
+    "fiber": 5.5,
+    "source": "https://fdc.nal.usda.gov/food-details/170420/nutrients"
+  },
+  {
+    "id": "corn",
+    "name": "Canned sweetcorn, drained and rinsed",
+    "fdcId": 168397,
+    "tags": [
+      "corn"
+    ],
+    "ready": true,
+    "description": "Corn, sweet, yellow, canned, drained solids, rinsed with tap water",
+    "kcal": 64.0,
+    "protein": 2.18,
+    "carbs": 13.0,
+    "fat": 1.43,
+    "fiber": 1.7,
+    "source": "https://fdc.nal.usda.gov/food-details/168397/nutrients"
+  },
+  {
+    "id": "carrot",
+    "name": "Raw carrot",
+    "fdcId": 170393,
+    "tags": [
+      "carrot"
+    ],
+    "ready": true,
+    "description": "Carrots, raw",
+    "kcal": 41.0,
+    "protein": 0.93,
+    "carbs": 9.58,
+    "fat": 0.24,
+    "fiber": 2.8,
+    "source": "https://fdc.nal.usda.gov/food-details/170393/nutrients"
+  },
+  {
+    "id": "kidneybean",
+    "name": "Canned kidney beans, drained and rinsed",
+    "fdcId": 175243,
+    "tags": [
+      "kidney bean",
+      "rajma"
+    ],
+    "ready": true,
+    "description": "Beans, kidney, red, mature seeds, canned, drained solids, rinsed in tap water",
+    "kcal": 121,
+    "protein": 8.12,
+    "carbs": 20.8,
+    "fat": 0.93,
+    "fiber": 6.0,
+    "source": "https://fdc.nal.usda.gov/food-details/175243/nutrients"
+  },
+  {
+    "id": "mushroom",
+    "name": "Mushrooms, already cooked",
+    "fdcId": 169252,
+    "tags": [
+      "mushroom"
+    ],
+    "ready": true,
+    "description": "Mushrooms, white, cooked, boiled, drained, without salt",
+    "kcal": 28.0,
+    "protein": 2.17,
+    "carbs": 5.29,
+    "fat": 0.47,
+    "fiber": 2.2,
+    "source": "https://fdc.nal.usda.gov/food-details/169252/nutrients"
+  },
+  {
+    "id": "avocado",
+    "name": "Avocado",
+    "fdcId": 171705,
+    "tags": [
+      "avocado"
+    ],
+    "ready": true,
+    "description": "Avocados, raw, all commercial varieties",
+    "kcal": 160,
+    "protein": 2.0,
+    "carbs": 8.53,
+    "fat": 14.7,
+    "fiber": 6.7,
+    "source": "https://fdc.nal.usda.gov/food-details/171705/nutrients"
+  },
+  {
+    "id": "onion",
+    "name": "Raw onion",
+    "fdcId": 170000,
+    "tags": [
+      "onion"
+    ],
+    "ready": true,
+    "description": "Onions, raw",
+    "kcal": 40.0,
+    "protein": 1.1,
+    "carbs": 9.34,
+    "fat": 0.1,
+    "fiber": 1.7,
+    "source": "https://fdc.nal.usda.gov/food-details/170000/nutrients"
+  },
+  {
+    "id": "cabbage",
+    "name": "Raw cabbage",
+    "fdcId": 169975,
+    "tags": [
+      "cabbage"
+    ],
+    "ready": true,
+    "description": "Cabbage, raw",
+    "kcal": 25.0,
+    "protein": 1.28,
+    "carbs": 5.8,
+    "fat": 0.1,
+    "fiber": 2.5,
+    "source": "https://fdc.nal.usda.gov/food-details/169975/nutrients"
+  },
+  {
+    "id": "brownrice",
+    "name": "Brown rice, already cooked",
+    "fdcId": 169704,
+    "tags": [
+      "rice"
+    ],
+    "ready": true,
+    "description": "Rice, brown, long-grain, cooked (Includes foods for USDA's Food Distribution Program)",
+    "kcal": 123,
+    "protein": 2.74,
+    "carbs": 25.6,
+    "fat": 0.97,
+    "fiber": 1.6,
+    "source": "https://fdc.nal.usda.gov/food-details/169704/nutrients"
+  },
+  {
+    "id": "quinoa",
+    "name": "Quinoa, already cooked",
+    "fdcId": 168917,
+    "tags": [
+      "quinoa"
+    ],
+    "ready": true,
+    "description": "Quinoa, cooked",
+    "kcal": 120,
+    "protein": 4.4,
+    "carbs": 21.3,
+    "fat": 1.92,
+    "fiber": 2.8,
+    "source": "https://fdc.nal.usda.gov/food-details/168917/nutrients"
+  },
+  {
+    "id": "almond",
+    "name": "Plain almonds",
+    "fdcId": 170567,
+    "tags": [
+      "almond",
+      "tree nut"
+    ],
+    "ready": true,
+    "description": "Nuts, almonds",
+    "kcal": 579,
+    "protein": 21.2,
+    "carbs": 21.6,
+    "fat": 49.9,
+    "fiber": 12.5,
+    "source": "https://fdc.nal.usda.gov/food-details/170567/nutrients"
+  },
+  {
+    "id": "orange",
+    "name": "Orange",
+    "fdcId": 169097,
+    "tags": [
+      "orange",
+      "citrus"
+    ],
+    "ready": true,
+    "description": "Oranges, raw, all commercial varieties",
+    "kcal": 47.0,
+    "protein": 0.94,
+    "carbs": 11.8,
+    "fat": 0.12,
+    "fiber": 2.4,
+    "source": "https://fdc.nal.usda.gov/food-details/169097/nutrients"
+  },
+  {
+    "id": "strawberry",
+    "name": "Strawberries",
+    "fdcId": 167762,
+    "tags": [
+      "strawberry"
+    ],
+    "ready": true,
+    "description": "Strawberries, raw",
+    "kcal": 32.0,
+    "protein": 0.67,
+    "carbs": 7.68,
+    "fat": 0.3,
+    "fiber": 2.0,
+    "source": "https://fdc.nal.usda.gov/food-details/167762/nutrients"
+  },
+  {
+    "id": "sweetpotato",
+    "name": "Sweet potato, already boiled",
+    "fdcId": 168484,
+    "tags": [
+      "sweet potato"
+    ],
+    "ready": true,
+    "description": "Sweet potato, cooked, boiled, without skin",
+    "kcal": 76.0,
+    "protein": 1.37,
+    "carbs": 17.7,
+    "fat": 0.14,
+    "fiber": 2.5,
+    "source": "https://fdc.nal.usda.gov/food-details/168484/nutrients"
   }
 ]

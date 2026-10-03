@@ -9,6 +9,12 @@ with zipfile.ZipFile(ROOT / '.deps/nutrition.zip') as archive:
     name = next(n for n in archive.namelist() if n.endswith('.json'))
     dataset = json.loads(archive.read(name))
 foods = dataset['SRLegacyFoods']
+if '--find' in sys.argv:
+    index = sys.argv.index('--find')
+    for term in sys.argv[index + 1:]:
+        matches = [f for f in foods if term.lower() in f['description'].lower()]
+        print(json.dumps({'query': term, 'matches': [{'fdcId': f['fdcId'], 'description': f['description']} for f in matches[:12]]}))
+    sys.exit()
 if '--inspect' in sys.argv:
     terms = ['oats', 'bananas, raw', 'apples, raw, with skin', 'peanut butter, smooth',
              'almonds', 'chia', 'cucumber, with peel', 'tomatoes, red, ripe, raw',

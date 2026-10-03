@@ -1,4 +1,4 @@
-# Android device validation — 0.3.0
+# Android device validation — 0.3.1
 
 These are physical-device checks, not claims of completed phone testing. Use synthetic chat and known ingredient labels.
 
@@ -24,12 +24,22 @@ These are physical-device checks, not claims of completed phone testing. Use syn
 
 ## Photos and food
 
-1. Select a gallery image and capture a camera image. Confirm the preview, rotation, metadata-stripped request, and retry. **Service transcription is currently provider-blocked; report this separately from camera/gallery behavior.**
-2. When the provider recovers, test glare, blur, tiny print, rotation, and each supported label language. Compare every ingredient, negation, quantity, and advisory statement with the source.
+1. Select a gallery image and capture a camera image. Confirm the preview, rotation, metadata-stripped request, and retry. Synthetic service transcription passed; the real phone camera/gallery still needs validation.
+2. Test glare, blur, tiny print, rotation, and each supported label language. Compare every ingredient, negation, quantity, and advisory statement with the source.
 3. Typed `rice, SOYA protein, whey, cayenne` should flag the three initial intolerances. `Rice, spices, natural flavors` should request clarification. `Lactose-free milk` should retain conservative dairy matching.
 4. Add a restriction and confirm that recipe and meal validation uses it. Incomplete labels must not imply safety.
 5. Create and save a recipe, place it on a date, log half a portion, then log again with a different portion. The existing food entry should update, not duplicate.
 6. Add a custom food with unknown calories. Totals must say they are incomplete. Verify day/week planning, recipe details, and shopping quantities.
+7. Ask for pasta, then a potato sandwich, then a different savory meal. The result must use the requested ingredients and avoid a renamed repeat. Try explicit exclusions such as "without spinach".
+8. Generate a week from saved recipes. Check all seven days and confirm breakfast, lunch and dinner differ within each day. A fresh shelf should generate new AI recipes rather than insert preset meals.
+
+## Availability and emotional-support regression
+
+1. Use three recipe requests followed by five chat messages. They must not hit the old shared eight-request ceiling.
+2. Test a scoped tool limit. Chat should remain available. Inspect `service-status.py` for separate counters.
+3. Test a real 429 response. The app should show the category and wait time, preserve the draft/message and disable premature chat retries.
+4. "I'm crying" should receive acknowledgment and a gentle question about what happened, without helplines or assumed danger.
+5. "I'm crying because my friend ignored me" should receive contextual support. Concrete present danger must still receive calm, appropriate urgent help.
 
 ## Movement and persistence
 

@@ -2,7 +2,13 @@
 
 A softer little place for meals, small plans, and whatever is on your mind. An Android companion built for a friend, with an original penguin mascot and a pastel, illustrated interface inspired by cozy games such as Cats & Soup.
 
-## Version 0.3.0
+## Version 0.3.1
+
+- **Separate allowances:** chat has its own 120-request daily ceiling and reserved compute budget; recipes/help and photos cannot consume chat slots. A regression verifies 100 bounded chat requests still fit after tool usage.
+- **Free-tier inference:** Cloudflare Workers AI replaces the previous 50-request/day provider dependency. No paid-plan upgrade or automatic paid fallback is configured. Provider availability and the account-wide free compute allocation still apply.
+- **Real recipe variety:** AI generates recipes and preparation sequences from 34 attributed ingredients. Recent suggestions and requested/excluded ingredients are checked. The four preset recipes are no longer injected into generation or meal planning.
+- **Efficient planning:** a seven-day schedule uses one model call when recipes exist, or two calls when fresh AI recipes must first be created.
+- **Calibrated emotional support:** ordinary crying gets warmth and a gentle question, not an assumed emergency. Concrete immediate danger retains appropriate urgent help.
 
 - Five labeled destinations: **Today, Check, Meals, Move, Chat**. Each owns its navigation state, drafts, and scroll position.
 - A native launch splash, illustrated cozy room, soft cards, floating light, gentle transitions, breathing/blinking mascot, and touch reactions. Android motion preferences are respected; sounds default off.
@@ -17,11 +23,9 @@ A softer little place for meals, small plans, and whatever is on your mind. An A
 
 ## Service status
 
-The backend uses explicitly free model routes, with no data collection and zero-retention routing. It never switches to a paid model automatically.
+The backend uses Cloudflare's 10,000-neuron daily free allocation, with separate conservative reservations for chat, assistance, and images. Keep the account on Workers Free. Other projects on the same account share the provider allocation; this is not a promise of unlimited inference.
 
-**Photo reading is currently provider-blocked.** Live tests received rate-limit and privacy-endpoint errors. The owner chose to keep the free-only policy. Photo selection, preview, upload, and retry are implemented, but successful service transcription is not claimed. Typed ingredient checks still work.
-
-Live companion expression-protocol and recipe JSON tests passed. See [build verification](docs/BUILD_STATUS.md) for exact checks and remaining device testing.
+Live crying/ordinary-distress/immediate-danger checks, three distinct recipe requests, a seven-day plan, and synthetic image transcription passed. See [build verification](docs/BUILD_STATUS.md) for details and remaining device testing.
 
 ## Build
 
@@ -37,7 +41,7 @@ Use `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` on a no
 
 APK: `app/build/outputs/apk/debug/app-debug.apk`.
 
-Complete [service setup](docs/CLOUD_SETUP.md) before building a connected copy. `.poodles.properties` is ignored and must never be committed. The provider key belongs only in the Worker secret. The APK contains a limited, revocable app credential; keep this personal development APK private.
+Complete [service setup](docs/CLOUD_SETUP.md) before building a connected copy. `.poodles.properties` is ignored and must never be committed. No external AI-provider key is needed. The APK contains a limited, revocable app credential; keep this personal development APK private.
 
 Backend checks:
 
@@ -53,6 +57,10 @@ Live synthetic checks use the configured service and consume the shared free all
 python scripts/test-cloud-features.py --only companion
 python scripts/test-cloud-features.py --only recipe
 python scripts/test-cloud-features.py --only image
+python scripts/test-cloud-features.py --only distress
+python scripts/test-recipe-variety.py
+python scripts/test-week-plan.py
+python scripts/service-status.py
 ```
 
 Install updates using the same signing key to retain saved data. Follow [device testing](docs/DEVICE_TESTING.md), especially the reported tab-switching sequence and the phone's keyboard. The APK is development-signed, not a store release.
@@ -63,12 +71,12 @@ Install updates using the same signing key to retain saved data. Follow [device 
 - `Design.kt` and `CozyElements.kt` contain the original visual system and native mascot artwork.
 - `PoodlesViewModel.kt` coordinates tasks. `CompanionMemory.kt` validates bounded comfort preferences and reply markers. No separate inference call is needed to learn these preferences.
 - `LocalStore.kt` writes version-compatible JSON snapshots using a synchronized, fsynced temporary file and an atomic replacement that propagates commit errors.
-- `backend/src/worker.js` calls fixed free OpenRouter routes through Cloudflare Workers. A Durable Object limits requests to 45 attempts per UTC day and 8 per minute across APK copies.
+- `backend/src/worker.js` calls fixed Workers AI models through an AI binding. A Durable Object tracks separate request and compute allowances; it stores no conversation content. Chat uses Llama 3.1 8B fast, recipes/plans use Qwen3 30B-A3B, and images use Llama 4 Scout.
 - `LabelPhoto.kt` prepares images. No photo is included in general companion conversations.
 
 ## Food and movement limits
 
-Ingredient matching is conservative and cannot certify food safety. Unknown names, incomplete labels, translation errors, and cross-contact can be missed. The bundled nutrition catalog contains 18 source-backed USDA records, not a comprehensive food database. Generated recipes are constrained by ingredient IDs and preparation rules. Recorded injuries pause automatic workout generation.
+Ingredient matching is conservative and cannot certify food safety. Unknown names, incomplete labels, translation errors, and cross-contact can be missed. The nutrition catalog contains 34 source-backed USDA records, not a comprehensive food database. AI selects recipes, quantities and preparation actions; deterministic rules validate ingredient references and preparation methods. Recorded injuries pause automatic workout generation.
 
 ## Credits
 
