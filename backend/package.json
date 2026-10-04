@@ -1,13 +1,14 @@
 {
   "name": "mr-poodles-backend",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.js",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "check": "wrangler deploy --dry-run"
+    "check": "wrangler deploy --dry-run",
+    "check:live": "node scripts/live-research.mjs"
   },
   "devDependencies": { "wrangler": "4.147.0" }
 }

@@ -9,8 +9,10 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Compose provides the timed illustration. Remove the native layer as soon as its frame is ready.
+        splash.setOnExitAnimationListener { it.remove() }
         enableEdgeToEdge()
         setContent { PoodlesApp(viewModel()) }
     }

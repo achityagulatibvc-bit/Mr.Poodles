@@ -22,8 +22,55 @@ open class CloudModel {
     private val cooldowns = java.util.concurrent.ConcurrentHashMap<String, ServiceLimitException>()
     open fun cancel() { currentCall?.cancel() }
 
+    /** Kept separate from legacy generation so old backends never masquerade as retrieved evidence. */
+    open suspend fun research(input: ResearchRequest): ResearchResponse = withContext(Dispatchers.IO) {
+        check(BuildConfig.BACKEND_URL.startsWith("https://") && BuildConfig.APP_ACCESS_TOKEN.length >= 32) {
+            "Poodles' source lookup isn't ready in this version. Please ask for an updated copy."
+        }
+        val bucket = "research_${input.task}"
+        cooldowns.entries.removeIf { it.value.retryAt <= System.currentTimeMillis() }
+        (cooldowns["research_provider"] ?: cooldowns[bucket])?.let { throw it }
+        val call = client.newCall(Request.Builder().url(BuildConfig.BACKEND_URL.trimEnd('/') + "/v2/research")
+            .header("Authorization", "Bearer ${BuildConfig.APP_ACCESS_TOKEN}")
+            .post(json.encodeToString(ResearchRequest.serializer(), input).toRequestBody("application/json".toMediaType())).build())
+        currentCall = call
+        try {
+            call.await().use { response ->
+                if (response.code == 429 || response.code == 503 && response.header("Retry-After") != null) {
+                    val limit = ServiceLimits.parse(response.header("X-Poodles-Limit"), response.header("Retry-After"))
+                    cooldowns[if (limit.scope == "research_provider") limit.scope else bucket] = limit
+                    throw limit
+                }
+                if (!response.isSuccessful) throw IOException(if (response.code == 404 || response.code == 503)
+                    "Poodles' source lookup isn't ready yet. Your draft is kept." else "The sources couldn't be checked. Your previous result is kept; please try again.")
+                val body = response.body ?: throw IOException("The research reply was empty.")
+                val buffer = okio.Buffer()
+                body.source().use { source ->
+                    while (true) {
+                        currentCoroutineContext().ensureActive()
+                        if (source.read(buffer, 8192) == -1L) break
+                        check(buffer.size <= 256000) { "The research reply was too large." }
+                    }
+                }
+                val decoded = json.decodeFromString<ResearchResponse>(buffer.readUtf8())
+                val result = if (input.task == "workout") {
+                    // Invalid optional video metadata must not discard valid article evidence.
+                    decoded.copy(video = null).validate(input)
+                    val validVideo = runCatching { decoded.validate(input).video }.getOrNull()
+                    decoded.copy(video = validVideo)
+                } else decoded.validate(input)
+                currentCoroutineContext().ensureActive()
+                result
+            }
+        } catch (error: Exception) {
+            currentCoroutineContext().ensureActive()
+            if (error is ServiceLimitException) throw error
+            throw IOException("The sources couldn't be checked. Your previous result is kept; please try again.")
+        } finally { if (currentCall === call) currentCall = null }
+    }
+
     open suspend fun generate(instructions: String, input: String, structured: Boolean, maxTokens: Int,
-        task: String, history: List<Message>, image: String?, status: (String) -> Unit, stream: (String) -> Unit): String = withContext(Dispatchers.IO) {
+        task: String, history: List<Message>, status: (String) -> Unit, stream: (String) -> Unit): String = withContext(Dispatchers.IO) {
         check(BuildConfig.BACKEND_URL.startsWith("https://") && BuildConfig.APP_ACCESS_TOKEN.length >= 32) {
             "Poodles' connection isn't ready in this version. Please ask for an updated copy."
         }
@@ -37,7 +84,6 @@ open class CloudModel {
             put("input", input)
             put("maxTokens", maxTokens)
             put("stream", streaming)
-            if (image != null) put("image", image)
             putJsonArray("history") { history.takeLast(10).forEach { message -> addJsonObject {
                 put("role", if (message.role == "You") "user" else "assistant")
                 put("content", message.text.take(1800))
@@ -52,12 +98,12 @@ open class CloudModel {
         currentCall = call
         try {
             call.await().use { response ->
-                if (response.code == 429) {
+                if (response.code == 429 || response.code == 503 && response.header("Retry-After") != null) {
                     val limit = ServiceLimits.parse(response.header("X-Poodles-Limit"), response.header("Retry-After"))
-                    cooldowns[when { limit.scope == "provider_daily" -> "all"; limit.scope == "provider_minute" -> bucket; else -> limit.scope.substringBefore('_') }] = limit
+                    cooldowns[when { limit.scope == "provider_daily" -> "all"; limit.scope == "provider_minute" || limit.scope.startsWith("research_") -> bucket; else -> limit.scope.substringBefore('_') }] = limit
                     throw limit
                 }
-                if (!response.isSuccessful) throw IOException(friendlyHttpError(response.code, task == "vision"))
+                if (!response.isSuccessful) throw IOException(friendlyHttpError(response.code))
                 val content = response.body ?: throw IOException("The reply didn't arrive. Please try again.")
                 if (!streaming) {
                     val payload = json.parseToJsonElement(content.string()).jsonObject
@@ -115,19 +161,13 @@ private val friendlyErrors = setOf(
     "Poodles needs a little pause. Please try again later.",
     "Poodles' connection needs a small update. Ask the person who set up the app.",
     "Poodles couldn't connect just now. Please try again.",
-    "The photo reader needs a little pause. Try again later, or paste the label text.",
-    "The photo couldn't be read right now. Try again later, or paste the label text.",
     "That request was too large. Try a shorter message or label."
 )
-fun friendlyHttpError(code: Int, photo: Boolean = false): String = when {
-    photo && code == 429 -> "The photo reader needs a little pause. Try again later, or paste the label text."
-    photo && code >= 500 -> "The photo couldn't be read right now. Try again later, or paste the label text."
-    else -> when (code) {
+fun friendlyHttpError(code: Int): String = when (code) {
     429 -> "Poodles needs a little pause. Please try again later."
     401, 403 -> "Poodles' connection needs a small update. Ask the person who set up the app."
     400, 413 -> "That request was too large. Try a shorter message or label."
     else -> "Poodles couldn't connect just now. Please try again."
-    }
 }
 fun cleanJsonReply(text: String): String {
     val trimmed = text.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()

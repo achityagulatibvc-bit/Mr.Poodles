@@ -1,0 +1,4 @@
+# Tiramisu substitution guidance
+Synthetic Test Kitchen fixture for testing equal-amount substitutions in a cold assembled dessert.
+Replace mascarpone with soy cream in equal amounts.
+Replace mascarpone with coconut cream in equal amounts.

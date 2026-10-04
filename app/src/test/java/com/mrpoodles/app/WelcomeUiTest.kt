@@ -33,6 +33,7 @@ class WelcomeUiTest {
     @Test @Config(qualifiers = "w360dp-h480dp") fun profileSaveRemainsReachableWhileFormIsScrolled() {
         var saved: Profile? = null
         compose.setContent { PoodlesTheme(motion = false) { ProfileScreen(Profile(), false, null, {}, {}, {}, { saved = it }) } }
+        compose.onNodeWithText("Diary settings").performScrollTo().performClick()
         compose.onNodeWithText("Optional calorie target (kcal/day)").performScrollTo().performTextInput("2100")
         compose.onNodeWithText("Save my preferences").assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(2100, saved?.calorieTarget) }

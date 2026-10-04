@@ -1,0 +1,8 @@
+# Banana nutrition
+Synthetic fixture for parser tests, not a factual nutrition recommendation.
+Serving size: 1 medium banana
+Calories: 100 kcal
+Protein: 1 g
+Carbohydrate: 25 g
+Total fat: 0.3 g
+This page describes a medium piece without claiming a precise weight for it.

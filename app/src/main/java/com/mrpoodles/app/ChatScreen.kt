@@ -59,22 +59,31 @@ import kotlinx.coroutines.delay
             sent = null
         }
     }
-    Column(Modifier.fillMaxSize().testTag("chat_screen")) {
+    val options: @Composable () -> Unit = {
+        Box {
+            IconButton({ details = true }) { Icon(Icons.Rounded.MoreHoriz, "Conversation options") }
+            DropdownMenu(details, { details = false }) {
+                DropdownMenuItem(text = { Text(if (editProfile) "Back to chatting" else "Ask for a profile change") }, onClick = { editProfile = !editProfile; details = false })
+                DropdownMenuItem(text = { Text("Clear conversation") }, onClick = { clear = true; details = false })
+            }
+        }
+    }
+    ContextChatLayout(Modifier.testTag("chat_screen"), keyboardVisible = keyboard, context = {
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp).background(Lavender, RoundedCornerShape(24.dp)).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             CompanionMascot(Modifier.size(if (keyboard) 58.dp else 86.dp), if (replying) "thinking" else state.companionMood, state.data.profile.mode == "Hostel")
             Column(Modifier.weight(1f).padding(start = 6.dp)) {
                 Text("A chat with Poodles", style = MaterialTheme.typography.titleMedium)
                 Text(if (replying) "Putting a little thought into it…" else "A softer place to land.", style = MaterialTheme.typography.bodySmall)
             }
-            Box {
-                IconButton({ details = true }) { Icon(Icons.Rounded.MoreHoriz, "Conversation options") }
-                DropdownMenu(details, { details = false }) {
-                    DropdownMenuItem(text = { Text(if (editProfile) "Back to chatting" else "Ask for a profile change") }, onClick = { editProfile = !editProfile; details = false })
-                    DropdownMenuItem(text = { Text("Clear conversation") }, onClick = { clear = true; details = false })
-                }
-            }
+            options()
         }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("chat_messages"), state = list,
+    }, compactContext = {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Talk to Poodles", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            options()
+        }
+    }, conversation = {
+        LazyColumn(Modifier.fillMaxSize().testTag("chat_messages"), state = list,
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             if (state.data.messages.isEmpty()) item("welcome") {
                 Column(Modifier.padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -125,6 +134,7 @@ import kotlinx.coroutines.delay
                 }
             } }
         }
+    }, composer = {
         Surface(color = Paper) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
                 if (coolingDown) Text("You can send again in ${((state.chatRetryAt - now + 999) / 1000)}s. Your draft stays here.", style = MaterialTheme.typography.bodySmall)
@@ -146,7 +156,7 @@ import kotlinx.coroutines.delay
                 }
             }
         }
-    }
+    })
     if (clear) AlertDialog(onDismissRequest = { clear = false }, title = { Text("A fresh conversation?") },
         text = { Text("This deletes this conversation. Comfort memories can be reviewed separately in About you.") },
         confirmButton = { TextButton({ vm.clearConversation(); clear = false }) { Text("Clear conversation") } },

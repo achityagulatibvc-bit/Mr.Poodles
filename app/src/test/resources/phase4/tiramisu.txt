@@ -1,0 +1,13 @@
+# Tiramisu
+Author: Synthetic Test Kitchen
+This deliberately simplified test recipe is synthetic evidence, not cooking guidance.
+Serves: 4
+Prep: 15 minutes
+Chill: 2 hours
+Ingredients:
+250 g mascarpone
+100 ml coffee
+20 g sugar
+Method:
+1. Mix mascarpone with sugar in a bowl.
+2. Add coffee and stir. Chill in the fridge for two hours before serving.

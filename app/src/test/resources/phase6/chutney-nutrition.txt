@@ -1,0 +1,8 @@
+# Chutney nutrition
+Synthetic fixture for portion uncertainty tests, not a factual nutrition recommendation.
+Nutrition per 100 g
+Calories: 90 kcal
+Protein: 2 g
+Carbohydrate: 18 g
+Total fat: 1 g
+Spoon and bowl weights are not specified. This cannot establish calories per spoon.

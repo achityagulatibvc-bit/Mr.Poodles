@@ -35,7 +35,7 @@ class CompanionFlowTest {
         var lastInstructions = ""
         override fun cancel() = Unit
         override suspend fun generate(instructions: String, input: String, structured: Boolean, maxTokens: Int,
-            task: String, history: List<Message>, image: String?, status: (String) -> Unit, stream: (String) -> Unit): String {
+            task: String, history: List<Message>, status: (String) -> Unit, stream: (String) -> Unit): String {
             lastInstructions = instructions
             if (fail) throw java.io.IOException("Test connection interrupted")
             return block?.await() ?: "[poodles:comfort:none]\nWe can take this at your pace."

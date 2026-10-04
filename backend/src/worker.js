@@ -1,12 +1,16 @@
-import { BASE, CHAT_PERSONALITY } from './personality.js';
+import { composePersonality } from './personality.js';
+import { runResearch } from './research.js';
+import { ResearchError, bounded } from './bounded-http.js';
+import { eligible } from './provider-budget.js';
+import { legacyFallback } from './model-fallback.js';
 import { MODELS, estimateNeurons, normalizeStream, providerFailure } from './inference.js';
 import { bucketFor } from './quota.js';
 import { RECIPE_SCHEMA, PLAN_SCHEMA } from './schemas.js';
 export { MODELS } from './inference.js';
 export { PoodlesQuota } from './quota.js';
 
-function response(status, code, headers = {}) {
-  return Response.json({ error: { code } }, { status, headers: { 'Cache-Control': 'no-store', ...headers } });
+function response(status, code, headers = {}, causes) {
+  return Response.json({ error: { code, ...(causes ? { causes } : {}) } }, { status, headers: { 'Cache-Control': 'no-store', ...headers } });
 }
 export async function tokenMatches(token, expected) {
   if (!token || token.length < 32 || token.length > 256 || !/^[a-f0-9]{64}$/i.test(expected || '')) return false;
@@ -23,24 +27,20 @@ export function validateRequest(body) {
   if (!Number.isInteger(body.maxTokens) || body.maxTokens < 1 || body.maxTokens > 2400) throw new Error('invalid');
   if (!Array.isArray(body.history) || body.history.length > 10 || body.history.some(m => !m || !['user', 'assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 1800)) throw new Error('invalid');
   if (body.stream !== (body.task === 'chat')) throw new Error('invalid');
-  if (body.task === 'vision') {
-    if (typeof body.image !== 'string' || body.image.length > 750000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(body.image)) throw new Error('invalid');
-  } else if (body.image !== undefined) throw new Error('invalid');
+  if (body.image !== undefined) throw new Error('invalid');
   const structured = ['structured', 'recipe', 'plan'].includes(body.task);
-  const system = BASE + '\nTask instructions:\n' + body.instructions +
-    (body.task === 'chat' ? '\n' + CHAT_PERSONALITY : '') +
-    (structured ? '\nReturn exactly one valid JSON object. No Markdown fences. Follow the requested schema.' : '');
+  const system = composePersonality(body.instructions, structured);
   const history = body.history.map(({ role, content }) => ({ role, content }));
   const messages = [{ role: 'system', content: system }, ...history,
-    { role: 'user', content: body.task === 'vision' ? [{ type: 'text', text: body.input }, { type: 'image_url', image_url: { url: body.image } }] : body.input }];
+    { role: 'user', content: body.input }];
   if (body.task === 'recipe' || body.task === 'plan') messages[messages.length - 1].content += '\n/no_think';
   if (body.task === 'chat') {
     const bytes = () => new TextEncoder().encode(messages.map(m => m.content).join('\n')).length;
     while (bytes() > 12000 && messages.length > 2) messages.splice(1, 1);
     if (bytes() > 12000) throw new Error('large');
   }
-  const maxTokens = Math.min(body.maxTokens, body.task === 'chat' ? 320 : body.task === 'recipe' ? 2400 : body.task === 'vision' ? 900 : 1200);
-  return { task: body.task, model: MODELS[body.task], input: {
+  const maxTokens = Math.min(body.maxTokens, body.task === 'chat' ? 320 : body.task === 'recipe' ? 2400 : 1200);
+  return { task: body.task, model: MODELS[body.task], allowExternalFallback: body.allowExternalFallback === true, input: {
     messages, max_tokens: maxTokens, stream: body.stream,
     temperature: body.task === 'recipe' ? .85 : body.task === 'chat' ? .65 : structured ? .4 : .15,
     top_p: .9,
@@ -49,30 +49,32 @@ export function validateRequest(body) {
   } };
 }
 
-async function readLimited(request) {
-  if (Number(request.headers.get('content-length') || 0) > 800000) throw new Error('large');
+async function readLimited(request, limit = 160000, signal) {
+  if (Number(request.headers.get('content-length') || 0) > limit) throw new Error('large');
   const reader = request.body?.getReader();
   if (!reader) throw new Error('invalid');
   let text = '', size = 0;
   const decoder = new TextDecoder();
+  const abort = () => { reader.cancel().catch(() => {}); };
+  signal?.addEventListener('abort', abort, { once: true });
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 800000) { await reader.cancel(); throw new Error('large'); }
+      if (size > limit) { await reader.cancel(); throw new Error('large'); }
       text += decoder.decode(value, { stream: true });
     }
     return JSON.parse(text + decoder.decode());
-  } finally { reader.releaseLock(); }
+  } finally { signal?.removeEventListener('abort', abort); reader.releaseLock(); }
 }
 
 export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
-    if (request.method === 'GET' && path === '/health') return Response.json({ service: 'Mr. Poodles', version: '0.3.1' });
-    if (!((request.method === 'POST' && path === '/v1/help') || (request.method === 'GET' && path === '/v1/status'))) return response(404, 'not_found');
-    if (!env.APP_TOKEN_SHA256 || !env.AI || !env.QUOTA) return response(503, 'not_ready');
+    if (request.method === 'GET' && path === '/health') return Response.json({ service: 'Mr. Poodles', version: '0.4.0' });
+    if (!((request.method === 'POST' && ['/v1/help', '/v2/research'].includes(path)) || (request.method === 'GET' && path === '/v1/status'))) return response(404, 'not_found');
+    if (!env.APP_TOKEN_SHA256 || !env.QUOTA || path !== '/v2/research' && !env.AI) return response(503, 'not_ready');
     if (!await tokenMatches(request.headers.get('Authorization')?.replace(/^Bearer /, '') || '', env.APP_TOKEN_SHA256)) return response(401, 'unauthorized');
     const quota = env.QUOTA.get(env.QUOTA.idFromName('personal-app'));
     if (path === '/v1/status') {
@@ -80,10 +82,21 @@ export default {
       return new Response(status.body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
     if (!(request.headers.get('content-type') || '').startsWith('application/json')) return response(400, 'invalid_request');
+    if (path === '/v2/research') {
+      try {
+        const body = await bounded(inner => readLimited(request, 6000, inner), request.signal, 5000);
+        const result = await runResearch(body, env, quota, request.signal);
+        return Response.json(result, { headers: { 'Cache-Control': 'no-store' } });
+      } catch (error) {
+        const failure = error instanceof ResearchError ? error : new ResearchError('invalid_request', error.message === 'large' ? 413 : 400);
+        return response(failure.status, failure.code, { 'X-Poodles-Limit': failure.scope,
+          ...(failure.retry ? { 'Retry-After': String(failure.retry) } : {}) }, failure.causes);
+      }
+    }
     let validated;
-    try { validated = validateRequest(await readLimited(request)); }
+    try { validated = validateRequest(await bounded(inner => readLimited(request, 160000, inner), request.signal, 5000)); }
     catch (error) { return response(error.message === 'large' ? 413 : 400, 'invalid_request'); }
-    const { task, model, input } = validated;
+    const { task, model, input, allowExternalFallback } = validated;
     const neurons = estimateNeurons(task, input);
     if (neurons > 1000) return response(413, 'invalid_request');
     const allowed = await quota.fetch(new Request('https://quota/consume', { method: 'POST', body: JSON.stringify({ bucket: bucketFor(task), neurons }) }));
@@ -92,7 +105,12 @@ export default {
       'Retry-After': allowed.headers.get('Retry-After') || '60',
     });
     try {
-      const result = await env.AI.run(model, input);
+      let result;
+      try { result = await bounded(() => env.AI.run(model, input), request.signal, 30000); }
+      catch (error) {
+        if (error.status === 499 || request.signal.aborted || !allowExternalFallback || !eligible(env, 'groq')) throw error;
+        result = await legacyFallback(task, input, env, quota, request.signal);
+      }
       if (input.stream) {
         if (!result || typeof result.getReader !== 'function') return response(502, 'invalid_response');
         return new Response(normalizeStream(result), { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' } });
@@ -106,6 +124,8 @@ export default {
       if (structuredTask(task)) { try { JSON.parse(text); } catch { return response(502, 'invalid_response'); } }
       return Response.json({ text }, { headers: { 'Cache-Control': 'no-store' } });
     } catch (error) {
+      if (error instanceof ResearchError) return response(error.status, error.code, {
+        'X-Poodles-Limit': error.scope, ...(error.retry ? { 'Retry-After': String(error.retry) } : {}) });
       const failure = providerFailure(error);
       return response(failure.status, failure.status === 429 ? 'free_limit' : 'service_unavailable', { 'X-Poodles-Limit': failure.scope, 'Retry-After': String(failure.retry) });
     }

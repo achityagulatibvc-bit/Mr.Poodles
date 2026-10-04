@@ -1,0 +1,8 @@
+# Pyaaz kachori nutrition
+Synthetic fixture for parser tests, not a factual nutrition recommendation.
+Serving size: 1 medium kachori
+Calories: 200 kcal
+Protein: 4 g
+Carbohydrate: 24 g
+Total fat: 10 g
+Published portion values are estimates. Actual preparation and size can vary.

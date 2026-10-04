@@ -24,6 +24,7 @@ val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     val injuries: String = "", val experience: String = "Beginner", val calorieTarget: Int? = null,
     val sounds: Boolean = false, val gentleMotion: Boolean = true, val cloudConsent: Boolean = true,
     val rememberChats: Boolean = false, val rememberComfort: Boolean = false,
+    val sourceLookupConsent: Boolean = false, val externalModelConsent: Boolean = false,
     val restrictions: List<Restriction> = listOf(
         Restriction("Lactose", aliases = "milk, milk powder, whey, cream, butter, cheese, paneer, yogurt, yoghurt, lactose, ghee, buttermilk, curd"),
         Restriction("Soy", aliases = "soy, soya, soybean, soybeans, tofu, tempeh, edamame, miso, shoyu, tamari, soy lecithin"),
@@ -46,24 +47,34 @@ val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     val title: String, val ingredients: List<Ingredient>, val method: String = "assemble",
     val minutes: Int = 10, val servings: Int = 1, val note: String = "",
     val id: String = UUID.randomUUID().toString(), val aiGenerated: Boolean = false,
-    val profileRevision: Int = 0, val preparation: List<PreparationStep> = emptyList()
+    val profileRevision: Int = 0, val preparation: List<PreparationStep> = emptyList(),
+    val sourced: SourcedRecipe? = null, val origin: ResultOrigin? = null
 )
 @Serializable data class Meal(val id: String = UUID.randomUUID().toString(), val date: String,
-    val slot: String, val recipe: Recipe, val mode: String, val revision: Int)
+    val slot: String, val recipe: Recipe, val mode: String, val revision: Int, val portions: Double = 1.0)
 @Serializable data class Intake(val id: String = UUID.randomUUID().toString(), val date: String,
     val name: String, val kcal: Double?, val protein: Double? = null, val carbs: Double? = null,
     val fat: Double? = null, val portions: Double = 1.0, val source: String = "User estimate",
-    val mealId: String? = null)
+    val mealId: String? = null, val entryRevision: Int = 0,
+    val portion: Portion? = null, val estimate: NutritionEstimate? = null, val origin: ResultOrigin? = null)
 @Serializable data class Message(val role: String, val text: String, val id: String = UUID.randomUUID().toString(),
     val mood: String = "listening", val gift: String = "none")
 @Serializable data class CheckRecord(val text: String, val verdict: String, val date: String = LocalDate.now().toString())
 @Serializable data class Workout(val title: String, val exerciseIds: List<String>, val rounds: Int = 1,
-    val mode: String = "Hostel", val revision: Int = 0, val completedDate: String? = null)
+    val mode: String = "Hostel", val revision: Int = 0, val completedDate: String? = null,
+    val id: String = UUID.randomUUID().toString(), val sourced: SourcedWorkout? = null, val origin: ResultOrigin? = null)
 @Serializable data class AppData(val profile: Profile = Profile(), val revision: Int = 0,
     val meals: List<Meal> = emptyList(), val intake: List<Intake> = emptyList(),
     val recipes: List<Recipe> = emptyList(), val messages: List<Message> = emptyList(),
     val checks: List<CheckRecord> = emptyList(), val workout: Workout? = null,
-    val comfortMemories: List<ComfortMemory> = emptyList(), val recentRecipes: List<Recipe> = emptyList())
+    val comfortMemories: List<ComfortMemory> = emptyList(), val recentRecipes: List<Recipe> = emptyList(),
+    val schemaVersion: Int = 2, val recipeDraft: Recipe? = null,
+    val features: Map<Feature, FeatureConversation> = emptyMap(),
+    val savedWorkouts: List<Workout> = emptyList(), val workoutCompletions: List<WorkoutCompletion> = emptyList(),
+    val intakeOperations: List<IntakeReceipt> = emptyList(),
+    val recoveredRecords: List<RecoveredRecord> = emptyList(),
+    val pantryAmounts: List<PantryAmount> = emptyList(), val boughtShopping: List<String> = emptyList(),
+    val pendingPlan: PlanPreview? = null, val planSearchOffset: Int = 0)
 @Serializable data class ProfileProposal(val field: String, val value: String, val explanation: String = "")
 
 data class Finding(val trigger: String, val evidence: String, val note: String)
@@ -82,6 +93,7 @@ object FoodRules {
         val warnings = mutableListOf<String>()
         if (text.isBlank()) warnings += "No ingredients supplied."
         if (!complete) warnings += "Confirm the complete ingredient list and allergen statements."
+        if (Regex("(?i)\\[unclear]|\\bunknown\\b|\\bunreadable\\b").containsMatchIn(text)) warnings += "Some ingredient information is unclear."
         if (Regex("[^\\x00-\\x7F]").containsMatchIn(text)) warnings += "Foreign text may need translation; translation can miss triggers."
         listOf("spices", "spice blend", "flavouring", "flavoring", "natural flavors", "seasoning", "lecithin", "vegetable protein")
             .filter { contains(text, it) }.forEach { warnings += "Unspecified '$it': ask for the ingredient source." }
@@ -107,20 +119,27 @@ object FoodRules {
 
 data class Nutrients(val kcal: Double, val protein: Double?, val carbs: Double?, val fat: Double?)
 object Nutrition {
+    /** Historical invalid records remain stored, but never become made-up zero-calorie results. */
+    fun calculateOrNull(recipe: Recipe, foods: List<Food>, portions: Double = 1.0): Nutrients? =
+        runCatching { calculate(recipe, foods, portions) }.getOrNull()
     fun calculate(recipe: Recipe, foods: List<Food>, portions: Double = 1.0): Nutrients {
+        require(recipe.sourced == null) { "Sourced nutrition needs its own evidence and serving basis." }
+        require(recipe.ingredients.isNotEmpty())
         require(portions.isFinite() && portions > 0 && portions <= 20)
         require(recipe.servings in 1..8)
         val parts = recipe.ingredients.map { item ->
             require(item.grams.isFinite() && item.grams > 0 && item.grams <= 2000)
             (foods.find { it.id == item.id } ?: error("Unknown ingredient ${item.id}")) to (item.grams / 100.0 * portions / recipe.servings)
         }
-        fun total(selector: (Food) -> Double?): Double? = if (parts.any { selector(it.first) == null }) null else parts.sumOf { selector(it.first)!! * it.second }
+        fun total(selector: (Food) -> Double?): Double? = if (parts.any { selector(it.first)?.let { n -> n.isFinite() && n >= 0 } != true }) null else parts.sumOf { selector(it.first)!! * it.second }
+        require(parts.all { it.first.kcal.isFinite() && it.first.kcal >= 0 })
         return Nutrients(parts.sumOf { it.first.kcal * it.second }, total { it.protein }, total { it.carbs }, total { it.fat })
     }
 }
 
 object RecipeRules {
-    fun validate(recipe: Recipe, profile: Profile, foods: List<Food>): List<String> = buildList {
+    fun validate(recipe: Recipe, profile: Profile, foods: List<Food>): List<String> = if (recipe.sourced != null)
+        SourcedRecipeRules.validate(recipe, profile) else buildList {
         if (recipe.title.isBlank()) add("Recipe needs a title.")
         if (recipe.servings !in 1..8 || recipe.ingredients.size !in 1..12) add("Invalid serving or ingredient count.")
         if (recipe.minutes !in 1..profile.environment().maxMinutes) add("Recipe exceeds your active preparation-time limit.")
@@ -182,7 +201,7 @@ val exercises = listOf(
     Exercise("march", "Quiet marching", "March slowly in place, lifting feet gently. Use support if needed.", 60)
 )
 object WorkoutRules {
-    fun validate(workout: Workout, profile: Profile): Boolean = workout.rounds in 1..3 &&
+    fun validate(workout: Workout, profile: Profile): Boolean = if (workout.sourced != null) SourcedWorkoutRules.validate(workout, profile).isEmpty() else workout.rounds in 1..3 &&
         workout.exerciseIds.size in 1..6 && workout.exerciseIds.distinct().size == workout.exerciseIds.size &&
         workout.exerciseIds.all { id -> exercises.any { it.id == id } } &&
         profile.injuries.isBlank()

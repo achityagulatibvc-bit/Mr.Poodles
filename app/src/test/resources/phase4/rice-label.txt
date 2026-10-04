@@ -1,0 +1,6 @@
+# Sample Rice Original
+Country: India
+Synthetic manufacturer label for unit tests only. This is not a real packaged product or a suitability recommendation.
+Ingredients: rice, salt.
+Allergen information: No advisory statement is printed on this synthetic package.
+Storage: Keep dry.

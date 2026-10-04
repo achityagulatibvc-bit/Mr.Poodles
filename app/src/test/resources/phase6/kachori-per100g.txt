@@ -1,0 +1,8 @@
+# Pyaaz kachori nutrition
+Synthetic fixture for unit compatibility tests, not a factual nutrition recommendation.
+Nutrition per 100 g
+Calories: 350 kcal
+Protein: 7 g
+Carbohydrate: 42 g
+Total fat: 17 g
+This is a mass basis only. No piece weight or conversion is provided by this page.

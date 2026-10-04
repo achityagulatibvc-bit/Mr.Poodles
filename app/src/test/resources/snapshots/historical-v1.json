@@ -1,0 +1,20 @@
+{
+  "profile": {
+    "name": "Sunshine", "onboarding": true, "mode": "Home", "diet": "Vegetarian",
+    "cuisine": "Indian", "goal": "Gentle movement", "injuries": "Ankle pain",
+    "experience": "Beginner", "calorieTarget": 1900, "sounds": true, "gentleMotion": false,
+    "cloudConsent": true, "rememberChats": true, "rememberComfort": true,
+    "restrictions": [{"name":"Milk","kind":"Allergy","aliases":"whey, casein","notes":"User note","enabled":true}],
+    "hostel": {"equipment":["Kettle"],"mealSource":"Mess","budget":"100 INR/day","maxMinutes":15,"pantry":"Rice","rules":"No cooking","workoutEquipment":"None","workoutSpace":"Quiet room"},
+    "home": {"equipment":["Stove","Fridge"],"mealSource":"Family meals","budget":"Optional","maxMinutes":45,"pantry":"Fruit","rules":"Shared kitchen","workoutEquipment":"Mat","workoutSpace":"Living room"}
+  },
+  "revision": 7,
+  "recipes": [{"id":"recipe-old","title":"Banana bowl","ingredients":[{"id":"banana","grams":200.0}],"method":"assemble","minutes":10,"servings":2,"note":"Keep this note","aiGenerated":true,"profileRevision":6,"preparation":[{"action":"cut","ingredients":["banana"]}]}],
+  "meals": [{"id":"meal-old","date":"2026-09-29","slot":"Lunch","mode":"Home","revision":6,"recipe":{"id":"recipe-old","title":"Banana bowl","ingredients":[{"id":"banana","grams":200.0}],"servings":2}}],
+  "intake": [{"id":"intake-old","date":"2026-09-29","name":"Lunch","kcal":89.0,"protein":null,"carbs":22.0,"fat":null,"portions":1.0,"source":"Old estimate","mealId":"meal-old"},{"id":"unknown-old","date":"2026-09-30","name":"Snack","kcal":null}],
+  "messages": [{"role":"You","text":"Quiet company please","id":"message-old","mood":"listening","gift":"none"}],
+  "checks": [{"text":"rice, whey","verdict":"Trigger found","date":"2026-09-29"}],
+  "workout": {"title":"Gentle reset","exerciseIds":["breathe","walk"],"rounds":1,"mode":"Home","revision":6,"completedDate":"2026-09-28"},
+  "comfortMemories": [],
+  "recentRecipes": [{"title":"Older draft","ingredients":[{"id":"banana","grams":80.0}]}]
+}

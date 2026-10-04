@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -91,7 +92,7 @@ import kotlinx.coroutines.delay
 }
 
 @Composable fun SplashScreen() {
-    Surface(color = Paper, modifier = Modifier.fillMaxSize()) {
+    Surface(color = Paper, modifier = Modifier.fillMaxSize().testTag("launch_splash")) {
         Column(Modifier.padding(36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             CozyScene(Modifier.fillMaxWidth().height(220.dp), "sleepy")
             Spacer(Modifier.height(26.dp))

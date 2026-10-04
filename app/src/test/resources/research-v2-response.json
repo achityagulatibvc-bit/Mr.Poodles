@@ -1,0 +1,39 @@
+{
+  "apiVersion": 2,
+  "requestId": "request-1",
+  "profileRevision": 3,
+  "snapshot": {
+    "id": "snapshot-1",
+    "requestId": "request-1",
+    "sources": [{
+      "id": "source-1",
+      "url": "https://www.bbcgoodfood.com/recipes/fixture",
+      "title": "Fixture oats",
+      "retrievedAt": "2026-10-03T00:00:00.000Z",
+      "author": "Fixture author",
+      "publishedAt": null,
+      "publisher": "www.bbcgoodfood.com",
+      "excerpt": "Ingredients: oats and water. Mix the oats with water and refrigerate overnight. This recipe has two servings.",
+      "kind": "recipe",
+      "cached": true,
+      "completeness": "unverified"
+    }],
+    "limitations": ["Extracted page text may be incomplete."]
+  },
+  "video": null,
+  "answer": {
+    "message": "Let us look at the sources together.",
+    "claims": [{
+      "text": "Ingredients: oats and water. Mix the oats with water and refrigerate overnight. This recipe has two servings.",
+      "basis": "source",
+      "evidence": [{
+        "snapshotId": "snapshot-1",
+        "sourceId": "source-1",
+        "excerpt": "Ingredients: oats and water. Mix the oats with water and refrigerate overnight. This recipe has two servings."
+      }]
+    }],
+    "uncertainties": ["Extraction completeness is unverified."]
+  },
+  "provider": "cloudflare",
+  "limitations": ["Extracted page text may be incomplete."]
+}

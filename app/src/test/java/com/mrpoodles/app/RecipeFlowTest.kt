@@ -19,7 +19,7 @@ class RecipeFlowTest {
     private class FakeRecipes(var recipes: List<Recipe>) : CloudModel() {
         val calls = mutableListOf<String>()
         override suspend fun generate(instructions: String, input: String, structured: Boolean, maxTokens: Int,
-            task: String, history: List<Message>, image: String?, status: (String) -> Unit, stream: (String) -> Unit): String {
+            task: String, history: List<Message>, status: (String) -> Unit, stream: (String) -> Unit): String {
             calls += task
             return if (task == "recipe") json.encodeToString(RecipeBatch.serializer(), RecipeBatch(recipes))
                 else json.encodeToString(GeneratedMenu.serializer(), GeneratedMenu(List(7) { day -> MenuDay(day % 3, (day + 1) % 3, (day + 2) % 3) }))
@@ -42,7 +42,7 @@ class RecipeFlowTest {
         assertEquals(1, vm.state.value.data.recentRecipes.size)
         vm.makeRecipe("pasta without spinach")
         await { !vm.state.value.busy && vm.state.value.error != null }
-        assertNull(vm.state.value.draft)
+        assertEquals("Pasta salad", vm.state.value.draft!!.title)
         assertTrue(vm.state.value.error!!.contains("repeated"))
         assertEquals(2, fake.calls.size)
     }

@@ -14,12 +14,13 @@ class LocalStore(context: Context) {
     @Synchronized fun read(): AppData {
         // Preserve compatibility with snapshots written by the previous AtomicFile implementation.
         if (legacyBackup.exists()) {
-            json.decodeFromString<AppData>(legacyBackup.readText())
+            SnapshotMigration.decode(legacyBackup.readText())
             Files.move(legacyBackup.toPath(), file.toPath(), ATOMIC_MOVE, REPLACE_EXISTING)
         }
-        return if (!file.exists()) AppData() else json.decodeFromString<AppData>(file.readText())
+        return if (!file.exists()) AppData() else SnapshotMigration.decode(file.readText())
     }
-    @Synchronized fun save(data: AppData) {
+    @Synchronized fun save(data: AppData, commit: (() -> Unit) -> Unit = { it() }) {
+        require(data.schemaVersion == 2)
         try {
             pending.outputStream().use { output ->
                 output.write(json.encodeToString(AppData.serializer(), data).toByteArray(Charsets.UTF_8))
@@ -27,7 +28,7 @@ class LocalStore(context: Context) {
             }
             // Unlike AtomicFile.finishWrite, move reports commit failures instead of merely logging them.
             // Both paths share a directory/filesystem. A failed atomic move leaves the old snapshot intact.
-            Files.move(pending.toPath(), file.toPath(), ATOMIC_MOVE, REPLACE_EXISTING)
+            commit { Files.move(pending.toPath(), file.toPath(), ATOMIC_MOVE, REPLACE_EXISTING); Unit }
         } finally { pending.delete() }
     }
 }

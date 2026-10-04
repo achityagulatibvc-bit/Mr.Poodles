@@ -21,9 +21,14 @@ class ServiceLimitsTest {
     @Test fun retryAfterHttpDatesAreHonored() {
         assertEquals(60000, ServiceLimits.parse("chat_minute", "Thu, 01 Jan 1970 00:01:00 GMT", 0).retryAt)
     }
-    @Test fun photosAndToolsDoNotShareTheChatBucket() {
+    @Test fun toolsDoNotShareTheChatBucket() {
         assertEquals("chat", ServiceLimits.bucket("chat"))
-        assertEquals("vision", ServiceLimits.bucket("vision"))
         assertEquals("assistance", ServiceLimits.bucket("recipe"))
+    }
+    @Test fun monthlyResearchWaitsAreNotShortenedToOneDay() {
+        val limit = ServiceLimits.parse("research_provider", "2592000", 1000)
+        assertEquals(2592001000L, limit.retryAt)
+        assertTrue(limit.message!!.contains("draft"))
+        assertEquals(60001L, ServiceLimits.parse("research_recipe", "Thu, 01 Jan 1970 00:01:00 GMT", 1).retryAt)
     }
 }

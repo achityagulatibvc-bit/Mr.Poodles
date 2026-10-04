@@ -1,2 +1,16 @@
-# Development only. Workers AI uses the AI binding, not an external provider key.
+# Development only. Copy to ignored .dev.vars and fill locally; never commit credentials.
 APP_TOKEN_SHA256=replace-with-generated-hash
+
+# Leave empty until EACH actual signup/account is verified: no card/payment, no phone/KYC,
+# no paid plan, no automatic recharge or pay-as-you-go. See docs/PHASE2_BACKEND.md.
+# Permitted names: cloudflare,exa,tavily,groq,youtube. Presence of a key alone enables nothing.
+FREE_PROVIDERS_VERIFIED=
+EXA_API_KEY=
+TAVILY_API_KEY=
+GROQ_API_KEY=
+YOUTUBE_API_KEY=
+
+# Operator-reviewed exact hosts. No wildcards, IPs or local domains. Default recipe/workout
+# hosts are in retrieval.js. Food checks require real manufacturer hosts here.
+# cacheSeconds > 0 is an explicit permission decision; manufacturer maximum 900, others 86400.
+SOURCE_REGISTRY_JSON=[]

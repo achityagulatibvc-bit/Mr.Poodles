@@ -1,3 +1,4 @@
+import { retrySeconds } from './bounded-http.js';
 // These models are available in Workers AI's daily free allocation. No paid-plan upgrade or Gateway billing is enabled.
 export const MODELS = Object.freeze({
   chat: '@cf/meta/llama-3.1-8b-instruct-fp8-fast',
@@ -5,23 +6,24 @@ export const MODELS = Object.freeze({
   structured: '@cf/meta/llama-3.1-8b-instruct-fp8-fast',
   recipe: '@cf/qwen/qwen3-30b-a3b-fp8',
   plan: '@cf/qwen/qwen3-30b-a3b-fp8',
-  vision: '@cf/meta/llama-4-scout-17b-16e-instruct',
 });
 
 export function estimateNeurons(task, input) {
-  const text = input.messages.map(m => typeof m.content === 'string' ? m.content : m.content.filter(p => p.type === 'text').map(p => p.text).join(' ')).join('\n');
+  const text = input.messages.map(m => m.content).join('\n');
   const bytes = new TextEncoder().encode(text + (input.response_format ? JSON.stringify(input.response_format) : '')).length + 512;
-  // UTF-8 byte count upper-bounds text tokens; image tokens get a separate conservative reservation.
-  if (task === 'vision') return Math.ceil((bytes + 12000) * .024545 + input.max_tokens * .077273);
+  // UTF-8 byte count conservatively upper-bounds text tokens.
   if (task === 'recipe' || task === 'plan') return Math.ceil(bytes * .004625 + input.max_tokens * .030475);
   return Math.ceil(bytes * .004119 + input.max_tokens * .034868);
 }
 
 export function providerFailure(error) {
   const detail = String(error?.message || '');
-  if (/daily.*(limit|quota)|neurons|allocation.*exceed|quota.*exceed/i.test(detail)) return { status: 429, scope: 'provider_daily', retry: Math.ceil((86400000 - Date.now() % 86400000) / 1000) };
-  if (/429|rate.?limit|too many|capacity|overload/i.test(detail)) return { status: 429, scope: 'provider_minute', retry: 60 };
-  return { status: 503, scope: 'provider_unavailable', retry: 30 };
+  const headers = error?.headers || error?.response?.headers;
+  const header = typeof headers?.get === 'function' ? headers.get('Retry-After') : headers?.['retry-after'];
+  const explicit = header ? retrySeconds(String(header)) : 0;
+  if (/daily.*(limit|quota)|neurons|allocation.*exceed|quota.*exceed/i.test(detail)) return { status: 429, scope: 'provider_daily', retry: Math.max(explicit, Math.ceil((86400000 - Date.now() % 86400000) / 1000)) };
+  if (/429|rate.?limit|too many|capacity|overload/i.test(detail)) return { status: 429, scope: 'provider_minute', retry: explicit || 60 };
+  return { status: 503, scope: 'provider_unavailable', retry: explicit || 30 };
 }
 
 /** Normalize both Workers AI response-delta SSE and OpenAI-shaped chunks for existing APKs. */

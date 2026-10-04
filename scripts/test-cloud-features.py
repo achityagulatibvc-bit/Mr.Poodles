@@ -1,27 +1,21 @@
-"""Exercise deployed text streaming, recipe JSON and image reading with synthetic data.
+"""Exercise deployed text streaming and legacy recipe JSON with synthetic data.
 
-Uses seven inference requests by default. --only distress uses three; other selections use one.
-Prints timings and assertions, not credentials or
-personal data. Pillow is needed only for the generated test label.
+Uses six inference requests by default. --only distress uses three; other selections use one.
+Prints timings and assertions, not credentials or personal data.
 """
-import base64
 import argparse
-from io import BytesIO
 import json
 from pathlib import Path
-import sys
 import time
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / '.tools/python-libs'))
-from PIL import Image, ImageDraw, ImageFont
 
 settings = dict(line.split('=', 1) for line in (ROOT / '.poodles.properties').read_text().splitlines() if '=' in line)
 headers = {'Authorization': 'Bearer ' + settings['app.token'], 'Content-Type': 'application/json', 'User-Agent': 'MrPoodles/0.2 Android'}
 parser = argparse.ArgumentParser()
-parser.add_argument('--only', choices=('chat', 'recipe', 'image', 'companion', 'distress'))
+parser.add_argument('--only', choices=('chat', 'recipe', 'companion', 'distress'))
 parser.add_argument('--show-synthetic-reply', action='store_true', help='Print only the reply to this script\'s fixed non-personal greeting')
 args = parser.parse_args()
 
@@ -39,7 +33,7 @@ def send(body):
         except (ValueError, AttributeError):
             code = None
         scope = error.headers.get('X-Poodles-Limit', 'unknown')
-        scope = scope if scope in ('app_daily', 'app_minute', 'app', 'provider', 'chat_daily', 'chat_minute', 'assistance_daily', 'assistance_minute', 'vision_daily', 'vision_minute', 'provider_daily', 'provider_minute', 'provider_unavailable') else 'unknown'
+        scope = scope if scope in ('app_daily', 'app_minute', 'app', 'provider', 'chat_daily', 'chat_minute', 'assistance_daily', 'assistance_minute', 'provider_daily', 'provider_minute', 'provider_unavailable') else 'unknown'
         retry = error.headers.get('Retry-After', '')
         retry = retry if retry.isdecimal() else 'unspecified'
         raise RuntimeError(f'HTTP {error.code}: {code if code in known else "service failure"}; limit={scope}; retry_seconds={retry}') from None
@@ -84,22 +78,6 @@ def test_recipe():
         assert recipe['method'] == 'soak' and recipe['servings'] == 1
         assert {i['id']: i['grams'] for i in recipe['ingredients']} == {'banana': 100, 'oats': 45}
     return dict(test='recipe_json', passed=True, total_seconds=round(time.perf_counter()-started, 2))
-
-def test_image():
-    image = Image.new('RGB', (800, 320), 'white')
-    draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype('C:/Windows/Fonts/arial.ttf', 38)
-    draw.multiline_text((30, 30), 'INGREDIENTS\nrice, soya protein, whey\nMay contain sesame', font=font, fill='black', spacing=24)
-    buffer = BytesIO()
-    image.save(buffer, 'JPEG', quality=85)
-    encoded = 'data:image/jpeg;base64,' + base64.b64encode(buffer.getvalue()).decode()
-    started = time.perf_counter()
-    with send(dict(base, task='vision', maxTokens=900, image=encoded,
-               instructions='Transcribe the food label exactly, including the advisory statement. Do not assess food safety.',
-                   input='Read this test label.')) as reply:
-        text = json.load(reply)['text'].lower()
-        assert all(term in text for term in ('rice', 'soya', 'whey', 'sesame')), 'Image reading missed a test ingredient'
-    return dict(test='synthetic_label_image', passed=True, total_seconds=round(time.perf_counter()-started, 2))
 
 def test_companion():
     import re
@@ -165,6 +143,6 @@ def test_distress():
                 assert not re.search(r"i'm (so )?scared|oh no", text, re.I), 'Companion should remain calm during emergencies'
     return dict(test='distress_calibration', passed=True, scenarios=len(cases))
 
-for name, run in [('chat', test_chat), ('recipe', test_recipe), ('companion', test_companion), ('distress', test_distress), ('image', test_image)]:
+for name, run in [('chat', test_chat), ('recipe', test_recipe), ('companion', test_companion), ('distress', test_distress)]:
     if args.only is None or args.only == name:
         print(json.dumps(run()), flush=True)

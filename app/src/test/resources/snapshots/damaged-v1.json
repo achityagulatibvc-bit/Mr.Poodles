@@ -1,0 +1,11 @@
+{
+  "profile": {"name":"Preserve my profile"},
+  "recipes": [
+    {"id":"unknown-food","title":"Old ingredient","ingredients":[{"id":"retired-food","grams":60.0}]},
+    {"id":"bad-serving","title":"Bad servings","ingredients":[{"id":"banana","grams":-20.0}],"servings":0},
+    {"id":"broken-shape","title":"Keep raw","ingredients":"not a list"},
+    {"id":"good","title":"Good bowl","ingredients":[{"id":"banana","grams":80.0}]}
+  ],
+  "intake": [{"id":"keep-unknown","date":"2026-09-30","name":"Snack","kcal":null}, {"name":"Malformed but recoverable","kcal":"not a number"}],
+  "workout": {"title":"Unknown move","exerciseIds":["retired-exercise"],"rounds":0}
+}

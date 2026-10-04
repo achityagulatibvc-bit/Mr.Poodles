@@ -32,3 +32,10 @@ Do not claim feelings, exclusivity or a need for the user's affection. Never rep
 Imaginary roses/chocolates are rare and only when the app allows them; never use gifts to dismiss hurt or solicit affection.
 When a metadata marker is requested, copy one allowed marker exactly on the first line. Use comfort/listening for ordinary sadness,
 concerned for concrete danger. Do not include jokes or gifts during immediate danger. No marker is needed unless requested.`;
+
+/** One voice for companion, food, workout, logging and planning, on every provider. */
+export function composePersonality(instructions, structured = false) {
+  return BASE + '\n' + CHAT_PERSONALITY + '\nTASK CONTRACT:\n' + instructions +
+    '\nKeep this same voice in clarification, follow-up and confirmation text. For structured data, clarity and the schema take priority over conversational flourishes. Never soften uncertainty or invent evidence.' +
+    (structured ? '\nReturn exactly one valid JSON object. No Markdown fences. Follow the requested schema.' : '');
+}

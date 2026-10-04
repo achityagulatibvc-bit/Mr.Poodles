@@ -15,7 +15,9 @@ Nutrition: USDA FoodData Central SR Legacy (April 2018), public-domain source da
 Record IDs and source URLs are retained in nutrition.json.
 https://fdc.nal.usda.gov/download-datasets
 
-Messages and selected label photos are processed through Cloudflare Workers AI.
+Messages and relevant preferences are processed through Cloudflare Workers AI.
+Optional source lookup uses Exa/Tavily and YouTube; Groq research fallback requires separate consent.
+Food checks are text-only. Retrieved sources retain their attribution and are not bundled model weights.
 Provider models are selected by the service. Model weights are not distributed with this application.
 The UI is inspired by cozy illustrated games. All bundled artwork is original.
 

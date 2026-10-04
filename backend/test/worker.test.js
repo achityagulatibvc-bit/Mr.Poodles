@@ -21,6 +21,7 @@ test('only fixed free-tier Workers models can be invoked, with no Gateway billin
   assert.equal(result.input.gateway, undefined);
   assert.equal(result.input.tools, undefined);
   assert.equal(result.input.max_tokens, 300);
+  assert.equal(result.allowExternalFallback, false);
 });
 test('unknown tasks and privileged history are rejected before inference', () => {
   assert.throws(() => validateRequest({ ...input(), task: '__proto__' }));
@@ -37,9 +38,12 @@ test('recipes use higher variety sampling and JSON mode without changing label p
   assert.ok(recipe.input.response_format.json_schema.properties.recipes.items.properties.preparation.items.required.includes('ingredients'));
   assert.equal(recipe.input.max_tokens, 1800);
 });
-test('vision accepts only bounded inline JPEG, never arbitrary URLs', () => {
+test('retired vision and every image payload are rejected before inference', () => {
   assert.throws(() => validateRequest({ ...input(), task: 'vision', stream: false, image: 'https://example.com/photo.jpg' }));
-  assert.equal(validateRequest({ ...input(), task: 'vision', stream: false, image: 'data:image/jpeg;base64,YWJj' }).model, MODELS.vision);
+  assert.throws(() => validateRequest({ ...input(), task: 'vision', stream: false, image: 'data:image/jpeg;base64,YWJj' }));
+  assert.throws(() => validateRequest({ ...input(), image: 'data:image/jpeg;base64,YWJj' }));
+  assert.equal(MODELS.vision, undefined);
+  assert.equal(quotaStatus(null, Date.now()).vision, undefined);
 });
 test('long histories are trimmed while current request and system policy survive', () => {
   const result = validateRequest({ ...input(), input: 'My current request', maxTokens: 1000,
@@ -95,12 +99,12 @@ test('crying is explicitly ordinary distress, but concrete immediate danger reta
   assert.ok(text.includes('Never suppress help for real danger'));
   assert.ok(text.includes('attempt/overdose'));
   const recipe = validateRequest({ ...input(), task: 'recipe', stream: false }).input.messages[0].content;
-  assert.ok(!recipe.includes('CALIBRATE SUPPORT'));
+  assert.ok(recipe.includes('CALIBRATE SUPPORT'));
 });
 test('missing configuration fails closed and health contains no secrets', async () => {
   assert.equal((await worker.fetch(request('a'.repeat(64)), {})).status, 503);
   const health = await worker.fetch(new Request('https://poodles/health'), {});
-  assert.equal((await health.json()).version, '0.3.1');
+  assert.equal((await health.json()).version, '0.4.0');
 });
 test('token comparison rejects incorrect credentials', async () => {
   const { token, env } = await configuredEnv();

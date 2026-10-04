@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mr-poodles-local-live",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+  "workers_dev": false,
+  "observability": { "enabled": false },
+  "durable_objects": {
+    "bindings": [{ "name": "QUOTA", "class_name": "PoodlesQuota" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PoodlesQuota"] }]
+}
