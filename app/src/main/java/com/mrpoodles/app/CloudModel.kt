@@ -15,9 +15,9 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /** The app carries a limited, revocable access token, never the provider API key. */
-open class CloudModel {
-    private val client = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS)
+open class CloudModel(private val client: OkHttpClient = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(45, TimeUnit.SECONDS).callTimeout(90, TimeUnit.SECONDS).followRedirects(false).build()
+) {
     @Volatile private var currentCall: Call? = null
     private val cooldowns = java.util.concurrent.ConcurrentHashMap<String, ServiceLimitException>()
     open fun cancel() { currentCall?.cancel() }
@@ -36,13 +36,28 @@ open class CloudModel {
         currentCall = call
         try {
             call.await().use { response ->
-                if (response.code == 429 || response.code == 503 && response.header("Retry-After") != null) {
+                val errorCode = if (response.isSuccessful) null else runCatching {
+                    json.parseToJsonElement(response.peekBody(8192).string()).jsonObject["error"]
+                        ?.jsonObject?.get("code")?.jsonPrimitive?.content
+                }.getOrNull()
+                val sourceFailure = errorCode in setOf("source_incomplete", "source_unavailable", "source_not_approved", "invalid_source_url")
+                // Older backends tagged unreadable pages as 503 with a provider cooldown.
+                // Those are request-specific failures, not a reason to block every source lookup.
+                if (response.code == 429 || response.code == 503 && response.header("Retry-After") != null && !sourceFailure) {
                     val limit = ServiceLimits.parse(response.header("X-Poodles-Limit"), response.header("Retry-After"))
                     cooldowns[if (limit.scope == "research_provider") limit.scope else bucket] = limit
                     throw limit
                 }
-                if (!response.isSuccessful) throw IOException(if (response.code == 404 || response.code == 503)
-                    "Poodles' source lookup isn't ready yet. Your draft is kept." else "The sources couldn't be checked. Your previous result is kept; please try again.")
+                if (!response.isSuccessful) throw ResearchLookupException(when {
+                    errorCode in setOf("source_not_approved", "invalid_source_url") ->
+                        "That source link isn't supported. Try searching by name instead. Your draft is kept."
+                    sourceFailure -> "These pages didn't provide readable source details. Try a different published link or a more specific name. Your draft and previous result are kept."
+                    response.code in setOf(401, 403) -> "Poodles' connection needs a small update. Ask the person who set up the app."
+                    response.code in setOf(400, 413) -> "That source request couldn't be sent. Shorten the message or check your saved preference details. Your draft is kept."
+                    response.code == 404 || errorCode in setOf("providers_not_configured", "source_configuration", "not_ready") ->
+                        "Poodles' source lookup isn't ready yet. Your draft is kept."
+                    else -> "The source service couldn't respond just now. Your draft and previous result are kept; please try again."
+                })
                 val body = response.body ?: throw IOException("The research reply was empty.")
                 val buffer = okio.Buffer()
                 body.source().use { source ->
@@ -64,7 +79,7 @@ open class CloudModel {
             }
         } catch (error: Exception) {
             currentCoroutineContext().ensureActive()
-            if (error is ServiceLimitException) throw error
+            if (error is ServiceLimitException || error is ResearchLookupException) throw error
             throw IOException("The sources couldn't be checked. Your previous result is kept; please try again.")
         } finally { if (currentCall === call) currentCall = null }
     }
@@ -146,6 +161,8 @@ open class CloudModel {
         } finally { if (currentCall === call) currentCall = null }
     }
 }
+
+private class ResearchLookupException(message: String) : IOException(message)
 
 private suspend fun Call.await(): Response = suspendCancellableCoroutine { continuation ->
     continuation.invokeOnCancellation { cancel() }

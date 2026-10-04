@@ -6,7 +6,7 @@ Read `docs/IMPLEMENTATION_PLAN.md` first. It is the persistent source of project
 
 ## Phase discipline
 
-- **The user completed the Phase 8 check-in and authorized packaging, deployment, commit and push. Version 0.4.0/code 7 is built and source-pushed; physical-device acceptance remains pending because no device was attached.** Read the current release handoff before any further work. Record new requirements in the master plan when received.
+- **Phase 8 delivery is complete. The user subsequently authorized recipe-pause repair and updated APK packaging. Version 0.4.1/code 8 is built and audited; its compatible backend is deployed, while repair source remains uncommitted. Physical-device acceptance remains pending because no device was attached.** Read the current release handoff before any further work. Record new requirements in the master plan when received. No further commit/push is authorized merely by resuming.
 - Work on one authorized phase at a time. Complete its checks and update the master plan's checkpoint and handoff, then continue to the next authorized phase without an intermediate permission prompt. Stop for the required pre-Phase-8 check-in or an actual blocker; never mark unperformed acceptance as passed.
 - If a phase cannot pass its acceptance criteria, record the blocker and leave it incomplete. Do not substitute a claim of success for an unperformed check.
 - Keep the user's new requirements in the master plan so they survive session switches.

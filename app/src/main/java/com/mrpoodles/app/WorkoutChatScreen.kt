@@ -77,7 +77,7 @@ import kotlinx.coroutines.delay
             }
         }
     }
-    ContextChatLayout(Modifier.testTag("workout_screen"), context = content,
+    ContextChatLayout(Modifier.testTag("workout_screen"), showContextBorder = true, context = content,
         compactContext = {
             Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(workout?.title ?: "Find a workout", Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)

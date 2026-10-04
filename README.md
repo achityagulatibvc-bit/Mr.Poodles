@@ -2,9 +2,9 @@
 
 A softer little place for meals, small plans, and whatever is on your mind. An Android companion built for a friend, with an original penguin mascot and a pastel, illustrated interface inspired by cozy games such as Cats & Soup.
 
-## Release 0.4.0 — version code 7
+## Release 0.4.1 — version code 8
 
-The APK is built and its compatible backend is deployed. [Release verification](docs/RELEASE_0.4.0.md) records the artifact path/hash, matching signing certificate, tests and production checks. No phone was attached, so physical-device upgrade and intended-user usability remain unverified. [The implementation plan](docs/IMPLEMENTATION_PLAN.md) retains the phase checkpoints.
+The APK is built and its compatible backend is deployed. [Release verification](docs/RELEASE_0.4.1.md) records the artifact path/hash, matching signing certificate, tests and production checks. This repair prevents unreadable pages from globally pausing source lookup, improves Android error/cooldown handling, and adds a clear context/chat divider. No phone was attached, so physical-device upgrade and intended-user usability remain unverified. [The implementation plan](docs/IMPLEMENTATION_PLAN.md) retains the phase checkpoints.
 
 - Home offers **Can I eat this?**, **Find a recipe**, **Find a workout**, and **Log what I ate**, alongside companion chat. Food and recipe workspaces use context above the conversation and a bottom composer.
 - **Text-only food checks:** enter a dish, exact product, public manufacturer URL, or pasted ingredients. Product lookup asks for brand, variant and country; typical dish ingredients are not an actual product label. Outcomes distinguish **Avoid**, **No listed conflict found**, and **Need more information**. Camera/gallery capture, photo reading and vision inference are retired.
@@ -27,9 +27,9 @@ The APK is built and its compatible backend is deployed. [Release verification](
 
 Keep Cloudflare on Workers Free and optional providers on verified free-only accounts without payment, phone/KYC requirements or automatic recharge. Credentials alone do not enable a provider. See [service setup](docs/CLOUD_SETUP.md) and the [research contract](docs/PHASE2_BACKEND.md) for budgets, consent and measured limitations.
 
-**The 0.4.0 backend is deployed after the user's release authorization.** It keeps v1 text/SSE behavior but rejects `task: "vision"` and any top-level JSON `image` field before quota reservation or inference. V1's request cap is 160,000 UTF-8 bytes; v2 retains its 6,000-byte cap. Old clients' photo actions are retired; install the text-only client update. Same-day stored quota history is retained, while `/v1/status` exposes active chat/assistance categories. Ordinary UTC daily rollover remains. Production research and companion probes passed; details are in the release record.
+**The 0.4.1 backend is deployed after the user's repair/release authorization.** It keeps v1 text/SSE behavior but rejects `task: "vision"` and any top-level JSON `image` field before quota reservation or inference. V1's request cap is 160,000 UTF-8 bytes; v2 retains its 6,000-byte cap. Old clients' photo actions are retired; install the text-only client update. Same-day stored quota history is retained, while `/v1/status` exposes active chat/assistance categories. Ordinary UTC daily rollover remains. Current research checks and historical companion probes are recorded separately in the release documentation.
 
-Final packaging checks pass: **324 Android tests**, including three actual-evidence replays, **67 backend tests**, and **0 lint errors / 6 dependency warnings**. Captured public evidence passes parser/state checks; production service probes also pass. **Replay substitutes Android transport; a live Android-to-deployed-backend/device acceptance pass is still pending.** Signing certificate continuity is verified against the old APK; device upgrade and intended-user usability are unperformed. [Build verification](docs/BUILD_STATUS.md) describes older releases; [0.4.0 verification](docs/RELEASE_0.4.0.md) is current.
+Final packaging checks pass: **339 Android tests**, including four actual-evidence replays and one real HTTP recipe test, **101 backend tests**, and **0 lint errors / 6 dependency warnings**. The real HTTP check uses the Android transport and deployed backend on the build host; captured-evidence replays substitute HTTP. Signing certificate continuity is verified against the old APK. Physical-device upgrade and intended-user usability remain unperformed. [Build verification](docs/BUILD_STATUS.md) describes older releases; [0.4.1 verification](docs/RELEASE_0.4.1.md) is current.
 
 ## Development checks and release boundary
 

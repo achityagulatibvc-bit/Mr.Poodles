@@ -1,4 +1,4 @@
-import { ResearchError, checkAbort } from './bounded-http.js';
+import { ResearchError, checkAbort, retrySeconds } from './bounded-http.js';
 
 // Conservative app ceilings, not promises of throughput. Requests, tokens, compute and credits are independent.
 export const FREE_CAPS = Object.freeze({
@@ -42,22 +42,40 @@ export function recordFailure(previous, now, provider, seconds) {
   return state;
 }
 export function eligible(env, provider) {
+  // Workers AI is the existing first-party binding, not an optional external account.
+  // Its free compute reservations still apply before every inference call.
+  if (provider === 'cloudflare') return typeof env.AI?.run === 'function';
   const verified = String(env.FREE_PROVIDERS_VERIFIED || '').split(',').map(x => x.trim());
   const key = { exa: 'EXA_API_KEY', tavily: 'TAVILY_API_KEY', groq: 'GROQ_API_KEY', youtube: 'YOUTUBE_API_KEY', cloudflare: 'AI' }[provider];
   return verified.includes(provider) && Boolean(key && env[key]);
 }
 export class ProviderBudget {
   constructor(quota, signal) { this.quota = quota; this.signal = signal; }
+  async send(path, body) {
+    checkAbort(this.signal);
+    try {
+      const result = await this.quota.fetch(new Request('https://quota/v2/' + path, { method: 'POST', body: JSON.stringify(body) }));
+      checkAbort(this.signal);
+      return result;
+    } catch (error) {
+      checkAbort(this.signal);
+      if (error.status === 499 || error.code === 'invalid_budget') throw error;
+      throw new ResearchError('budget_unavailable');
+    }
+  }
   async reserve(provider, cost) {
-    checkAbort(this.signal);
-    const result = await this.quota.fetch(new Request('https://quota/v2/reserve', { method: 'POST', body: JSON.stringify({ provider, cost }) }));
-    if (!result.ok) throw new ResearchError('free_limit', 429, Number(result.headers.get('Retry-After') || 60), 'research_provider');
-    checkAbort(this.signal);
+    const result = await this.send('reserve', { provider, cost });
+    if (result.status === 429) {
+      const error = new ResearchError('free_limit', 429, retrySeconds(result.headers.get('Retry-After')), 'research_provider');
+      // This denial already has a persisted quota/cooldown; do not extend it on reads.
+      error.reservationDenied = true;
+      throw error;
+    }
+    if (!result.ok) throw new ResearchError('budget_unavailable');
   }
   async failed(provider, error) {
-    if (error.status === 499) return;
-    const result = await this.quota.fetch(new Request('https://quota/v2/failure', { method: 'POST',
-      body: JSON.stringify({ provider, seconds: error.retry || 30 }) }));
+    if (error.status === 499 || error.reservationDenied) return;
+    const result = await this.send('failure', { provider, seconds: error.retry || 30 });
     if (!result.ok) throw new ResearchError('budget_unavailable');
   }
 }

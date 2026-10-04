@@ -104,7 +104,7 @@ test('crying is explicitly ordinary distress, but concrete immediate danger reta
 test('missing configuration fails closed and health contains no secrets', async () => {
   assert.equal((await worker.fetch(request('a'.repeat(64)), {})).status, 503);
   const health = await worker.fetch(new Request('https://poodles/health'), {});
-  assert.equal((await health.json()).version, '0.4.0');
+  assert.equal((await health.json()).version, '0.4.1');
 });
 test('token comparison rejects incorrect credentials', async () => {
   const { token, env } = await configuredEnv();

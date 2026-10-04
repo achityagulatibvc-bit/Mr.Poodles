@@ -90,6 +90,11 @@ test('provider eligibility requires explicit verified free-account configuration
   assert.equal(eligible(env(), 'exa'), true);
   assert.equal(eligible(env(), 'brave'), false);
 });
+test('existing Workers AI binding does not require external-provider attestation', () => {
+  assert.equal(eligible({ AI: { run() {} }, FREE_PROVIDERS_VERIFIED: 'exa,tavily,groq,youtube' }, 'cloudflare'), true);
+  assert.equal(eligible({ AI: {} }, 'cloudflare'), false);
+  assert.equal(eligible({ FREE_PROVIDERS_VERIFIED: 'cloudflare' }, 'cloudflare'), false);
+});
 test('documented Exa and Tavily response shapes produce fetched evidence, never snippets', async () => {
   for (const enabled of ['exa', 'tavily']) {
     const calls = [], { quota } = memoryQuota();
@@ -304,6 +309,69 @@ test('full v2 research returns request-bound evidence and does not persist user 
   assert.ok(!JSON.stringify([...values]).includes(sentence));
   assert.ok(!JSON.stringify([...values]).includes('test-exa'));
 });
+test('production external-provider list works with default client consent', async () => {
+  const { quota } = memoryQuota(), calls = [];
+  const result = await runResearch(request({ allowExternalModel: false }), {
+    ...env(), FREE_PROVIDERS_VERIFIED: 'exa,tavily,groq,youtube',
+  }, quota, undefined, fixtures(calls));
+  assert.equal(result.provider, 'cloudflare');
+  assert.equal(result.snapshot.sources[0].excerpt, sentence);
+  assert.ok(calls.every(call => !call.endpoint.includes('groq')));
+});
+test('valid retrieved pages survive unavailable optional models without external consent or invented claims', async t => {
+  for (const mode of ['missing', 'outage', 'quota', 'malformed', 'citation', 'oversized-input']) {
+    await t.test(mode, async () => {
+      const { quota, values } = memoryQuota(), calls = [], configured = env();
+      const value = request({ allowExternalModel: false });
+      if (mode === 'missing') delete configured.AI;
+      if (mode === 'outage') configured.AI.run = async () => { throw new Error('Provider unavailable'); };
+      if (mode === 'quota') values.set('provider-budgets-v1', recordFailure({}, Date.now(), 'cloudflare', 3600));
+      if (mode === 'malformed') configured.AI.run = async () => ({ response: 'not JSON' });
+      if (mode === 'citation') configured.AI.run = async () => ({ response: answer() });
+      if (mode === 'oversized-input') value.constraints = { restrictions: Array.from({ length: 12 }, () => ({
+        name: 'Milk', kind: 'Allergy', aliases: 'x'.repeat(400), notes: 'x'.repeat(200),
+      })) };
+      const result = await runResearch(value, configured, quota, undefined, fixtures(calls));
+      assert.equal(result.provider, 'retrieval_only');
+      assert.equal(result.snapshot.requestId, value.requestId);
+      assert.equal(result.snapshot.sources[0].excerpt, sentence);
+      assert.equal(result.snapshot.sources[0].completeness, 'unverified');
+      assert.deepEqual(result.answer.claims, []);
+      validateResearchAnswer(result.answer, result.snapshot);
+      assert.ok(result.limitations.some(text => text.includes('no model-generated')));
+      assert.ok(!result.limitations.some(text => text.includes('model reviewed')));
+      assert.ok(calls.every(call => !call.endpoint.includes('groq')));
+      if (mode === 'quota') assert.equal(values.get('provider-budgets-v1').cloudflare.day, undefined);
+    });
+  }
+});
+test('retrieval-only answers preserve feature quotas, failed extraction, cancellation and budget failures', async () => {
+  const configured = { ...env(), AI: undefined }, value = request({ allowExternalModel: false });
+  const denied = { fetch: async () => new Response(null, { status: 429, headers: { 'Retry-After': '123' } }) };
+  await assert.rejects(runResearch(value, configured, denied, undefined, () => assert.fail('No retrieval after feature limit')),
+    error => error.status === 429 && error.retry === 123);
+  await assert.rejects(runResearch(value, configured, memoryQuota().quota, undefined, async () => Response.json({ results: [] })),
+    error => error.code === 'source_unavailable');
+  const controller = new AbortController(), cancelEnv = env();
+  cancelEnv.AI.run = async () => { controller.abort(); return new Promise(() => {}); };
+  await assert.rejects(runResearch(value, cancelEnv, memoryQuota().quota, controller.signal, fixtures()), error => error.status === 499);
+  const { quota } = memoryQuota(), broken = { fetch: req => new URL(req.url).pathname === '/v2/failure' ?
+    new Response(null, { status: 503 }) : quota.fetch(req) };
+  const badModel = env(); badModel.AI.run = async () => { throw new Error('Provider down'); };
+  await assert.rejects(runResearch(value, badModel, broken, undefined, fixtures()), error => error.code === 'budget_unavailable');
+});
+test('stalled optional synthesis returns existing evidence before the whole-request deadline', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let started;
+  const entered = new Promise(resolve => { started = resolve; }), configured = env();
+  configured.AI.run = () => { started(); return new Promise(() => {}); };
+  const pending = runResearch(request({ allowExternalModel: false }), configured, memoryQuota().quota, undefined, fixtures());
+  await entered;
+  t.mock.timers.tick(20000);
+  const result = await pending;
+  assert.equal(result.provider, 'retrieval_only');
+  assert.equal(result.snapshot.sources[0].excerpt, sentence);
+});
 test('unconfigured v2 fails explicitly while health and legacy paths remain compatible', async () => {
   const { quota } = memoryQuota(), token = 'a'.repeat(64);
   const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token)))].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -330,4 +398,13 @@ test('Android and backend share the same research response fixture', async () =>
   const { quota } = memoryQuota();
   const generated = await runResearch(request(), env(), quota, undefined, fixtures());
   assert.deepEqual(Object.keys(generated).sort(), Object.keys(fixture).sort());
+});
+test('Android retrieval-only fixture matches the real degraded backend response', async () => {
+  const fixture = JSON.parse(await readFile(new URL('../../app/src/test/resources/research-v2-retrieval-only.json', import.meta.url), 'utf8'));
+  const generated = await runResearch(request({ allowExternalModel: false }), { ...env(), AI: undefined }, memoryQuota().quota, undefined, fixtures());
+  assert.deepEqual(generated.answer, fixture.answer);
+  assert.equal(generated.provider, fixture.provider);
+  assert.deepEqual(Object.keys(generated).sort(), Object.keys(fixture).sort());
+  assert.equal(generated.snapshot.sources[0].excerpt, fixture.snapshot.sources[0].excerpt);
+  validateResearchAnswer(fixture.answer, fixture.snapshot);
 });

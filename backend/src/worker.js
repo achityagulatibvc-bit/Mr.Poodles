@@ -72,7 +72,7 @@ async function readLimited(request, limit = 160000, signal) {
 export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
-    if (request.method === 'GET' && path === '/health') return Response.json({ service: 'Mr. Poodles', version: '0.4.0' });
+    if (request.method === 'GET' && path === '/health') return Response.json({ service: 'Mr. Poodles', version: '0.4.1' });
     if (!((request.method === 'POST' && ['/v1/help', '/v2/research'].includes(path)) || (request.method === 'GET' && path === '/v1/status'))) return response(404, 'not_found');
     if (!env.APP_TOKEN_SHA256 || !env.QUOTA || path !== '/v2/research' && !env.AI) return response(503, 'not_ready');
     if (!await tokenMatches(request.headers.get('Authorization')?.replace(/^Bearer /, '') || '', env.APP_TOKEN_SHA256)) return response(401, 'unauthorized');

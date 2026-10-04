@@ -18,8 +18,8 @@ android {
         applicationId = "com.mrpoodles.app"
         minSdk = 28
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.4.0"
+        versionCode = 8
+        versionName = "0.4.1"
         buildConfigField("String", "BACKEND_URL", quoted(cloudSettings.getProperty("backend.url", "")))
         buildConfigField("String", "APP_ACCESS_TOKEN", quoted(cloudSettings.getProperty("app.token", "")))
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

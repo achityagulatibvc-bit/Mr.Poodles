@@ -4,6 +4,8 @@ package com.mrpoodles.app
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -13,6 +15,7 @@ import androidx.compose.ui.unit.dp
 @Composable internal fun ContextChatLayout(
     modifier: Modifier = Modifier,
     keyboardVisible: Boolean = WindowInsets.isImeVisible,
+    showContextBorder: Boolean = false,
     context: @Composable () -> Unit,
     compactContext: @Composable () -> Unit = context,
     conversation: @Composable BoxScope.() -> Unit,
@@ -28,6 +31,11 @@ import androidx.compose.ui.unit.dp
                 .verticalScroll(if (compact) compactScroll else contextScroll).testTag("feature_context")) {
                 if (compact) compactContext() else context()
             }
+            if (showContextBorder) HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 2.dp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Box(Modifier.weight(1f).fillMaxWidth(), content = conversation)
             composer()
         }

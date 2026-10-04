@@ -8,6 +8,21 @@ class ResearchContractTest {
     private val request = ResearchRequest("request-1", 3, "recipe", "oats")
     private fun response() = json.decodeFromString<ResearchResponse>(javaClass.getResource("/research-v2-response.json")!!.readText())
 
+    @Test fun retrievalOnlyBackendFixtureKeepsEvidenceWithoutRequiringModelClaims() {
+        val result = json.decodeFromString<ResearchResponse>(
+            javaClass.getResource("/research-v2-retrieval-only.json")!!.readText()
+        ).validate(request)
+        assertEquals("retrieval_only", result.provider)
+        assertTrue(result.answer.claims.isEmpty())
+        assertTrue(result.answer.uncertainties.isNotEmpty())
+        assertEquals(response().snapshot.sources.single().excerpt, result.snapshot.sources.single().excerpt)
+        assertEquals("unverified", result.snapshot.sources.single().completeness)
+        assertThrows(IllegalArgumentException::class.java) {
+            result.copy(snapshot = result.snapshot.copy(sources = emptyList())).validate(request)
+        }
+        assertThrows(IllegalArgumentException::class.java) { result.validate(request.copy(requestId = "old")) }
+    }
+
     @Test fun sharedBackendFixtureDecodesWithSourceFreshnessAndUncertainty() {
         val result = response().validate(request)
         assertEquals("snapshot-1", result.snapshot.id)

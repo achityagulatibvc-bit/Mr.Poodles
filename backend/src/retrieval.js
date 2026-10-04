@@ -81,21 +81,32 @@ export async function providerExtract(provider, url, env, budget, signal, fetche
   return { excerpt: text.trim(), title: clean(item.title, 200), author: clean(item.author, 120) || null,
     publishedAt: clean(item.publishedDate, 80) || null };
 }
+const sourceFailure = error => error.status === 422 && ['source_incomplete', 'source_unavailable'].includes(error.code);
+function checkFatalFailure(error, signal) {
+  checkAbort(signal);
+  if (error.status === 499 || ['budget_unavailable', 'invalid_budget'].includes(error.code)) throw error;
+}
+function aggregateFailures(failures) {
+  // An attempted source is actionable even when another provider/candidate was blocked.
+  const source = failures.find(sourceFailure);
+  if (source) return new ResearchError(source.code, 422);
+  if (!failures.length) return new ResearchError('providers_not_configured', 503);
+  const failure = failures.find(error => error.status !== 429) || failures.at(-1);
+  return new ResearchError(failure.code || 'provider_unavailable', failure.status === 429 ? 429 : 503,
+    Math.min(...failures.map(error => error.retry || 30)));
+}
 async function fallback(providers, env, budget, signal, operation) {
   const failures = [];
   for (const provider of providers.filter(p => eligible(env, p))) {
     checkAbort(signal);
     try { return await operation(provider); }
     catch (error) {
-      if (error.status === 499 || signal?.aborted) throw new ResearchError('request_cancelled', 499);
+      checkFatalFailure(error, signal);
       failures.push(error);
-      await budget.failed(provider, error);
+      if (!sourceFailure(error)) await budget.failed(provider, error);
     }
   }
-  if (!failures.length) throw new ResearchError('providers_not_configured', 503);
-  const last = failures.at(-1);
-  const retry = Math.min(...failures.map(e => e.retry || 30));
-  throw new ResearchError(last.code || 'source_unavailable', failures.every(e => e.status === 429) ? 429 : 503, retry);
+  throw aggregateFailures(failures);
 }
 
 export async function retrieve(request, env, budget, signal, fetcher = fetch, pageCache = cache, now = Date.now()) {
@@ -111,7 +122,7 @@ export async function retrieve(request, env, budget, signal, fetcher = fetch, pa
       try { item.url = approvedUrl(item.url, registry); if (seen.has(item.url)) return false; seen.add(item.url); return true; }
       catch { return false; }
     });
-    if (!allowed.length) throw new ResearchError('source_unavailable', 503, 30);
+    if (!allowed.length) throw new ResearchError('source_unavailable', 422);
     return allowed;
   });
   const sources = [], failures = [];
@@ -130,11 +141,11 @@ export async function retrieve(request, env, budget, signal, fetcher = fetch, pa
       sources.push({ id: `source-${sources.length + 1}`, url: candidate.url, ...page, title: page.title || candidate.title || new URL(candidate.url).hostname,
         publisher: policy.host, kind: policy.kind, cached, completeness: 'unverified' });
     } catch (error) {
-      if (error.status === 499) throw error;
+      checkFatalFailure(error, signal);
       failures.push(error);
     }
   }
-  if (!sources.length) throw failures.at(-1) || new ResearchError('source_unavailable', 503, 30);
+  if (!sources.length) throw aggregateFailures(failures);
   return { id: crypto.randomUUID(), requestId: request.requestId, sources,
     limitations: ['Extracted page text may be incomplete. Citation matching does not prove factual accuracy.',
       ...(failures.length ? ['Some candidate pages could not be retrieved.'] : [])] };
@@ -156,7 +167,7 @@ export async function videoLookup(request, env, budget, signal, fetcher = fetch)
     return { video: { url: 'https://www.youtube.com/watch?v=' + item.id.videoId, title: clean(item.snippet.title, 200),
       channel: clean(item.snippet.channelTitle, 200), match: 'TECHNIQUE_REFERENCE', verificationNote: 'Search metadata only; not watched or verified as an exact session.' } };
   } catch (error) {
-    if (error.status === 499) throw error;
+    checkFatalFailure(error, signal);
     await budget.failed('youtube', error);
     return { video: null, limitation: 'Video lookup is temporarily unavailable; article evidence is kept.' };
   }

@@ -119,7 +119,7 @@ private fun Double.quantity() = if (isFinite()) String.format(Locale.US, "%.2f",
             } else result?.assessment?.let { FoodAssessmentCard(it) }
         }
     }
-    ContextChatLayout(Modifier.testTag("${tag}_screen"), context = content,
+    ContextChatLayout(Modifier.testTag("${tag}_screen"), showContextBorder = true, context = content,
         compactContext = {
             Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(currentRecipe?.title.takeIf { recipe } ?: title, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,

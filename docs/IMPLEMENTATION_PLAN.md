@@ -4,13 +4,15 @@ Last updated: 2026-10-04.
 
 ## 1. Resume here
 
-**0.4.0 / code 7 is built, audited, deployed and source-pushed. Release code commit `a88b31c` is on `origin/main`; this documentation follow-up records the verified outcome. APK: `app/build/outputs/apk/debug/app-debug.apk` (61,124,859 bytes). All 324 Android and 67 backend tests passed. Phase 8 physical-device upgrade/usability acceptance remains pending because no device was attached. Do not restart implementation phases or repackage merely to resume.**
+**0.4.1 / code 8 is built and audited after the user's explicit post-release packaging request. APK: `app/build/outputs/apk/debug/app-debug.apk` (61,124,855 bytes), same signing certificate as 0.4.0. The recurring recipe-pause repair is deployed as `1ad32992-840e-4d1c-9ea8-f0082d8c924b`. All 339 Android tests and 101 backend tests passed; lint has 0 errors / 6 existing warnings. An opt-in test used the actual Android HTTP transport against production and produced a validated recipe after a rejected source. Changes remain uncommitted. No phone was attached, so installation and physical-device acceptance remain unperformed. See `docs/RELEASE_0.4.1.md` and the recurring-pause checkpoint. Do not restart implementation phases.**
+
+The new APK includes the requested context/chat border in recipes, workouts and ingredient checks, plus client error/cooldown fixes. It replaces the previous artifact at the conventional path; the previous artifact hash is recorded in `docs/RELEASE_0.4.0.md`.
 
 The user authorized sequential phases in one continuous run, with a check-in before APK packaging. That check-in occurred, and “krde” authorized Phase 8 packaging, coordinated production backend deployment and final commit/push. Actual results and unperformed device gates are recorded below; authorization does not turn an unperformed check into a pass.
 
 - Baseline: commit `983459e` (`Fix free quotas, recipe variety and distress responses`).
 - Branch: `main`, tracking `origin/main`. All intended Phase 1–8 source, tests and documentation were committed as `a88b31c` and pushed. APKs, captured evidence, credentials and signing files remain ignored. Check current Git status before editing; subsequent user changes must be preserved.
-- Application release: version `0.4.0`, version code `7`; previous baseline was `0.3.1` / `6`.
+- Application release: version `0.4.1`, version code `8`; previous delivered release was `0.4.0` / `7`.
 - Foundations, research transport, shared navigation, sourced recipe/food-check/workout workspaces, natural-language diary and planner/shopping are integrated locally. These use strict evidence parsers and limited supported follow-ups; they are not unrestricted AI generation. Live coverage limitations remain explicit.
 - Exa, Tavily, Groq and YouTube keys/eligibility flags are present in ignored local configuration. The user previously reported signup without payment/phone/KYC. Live retrieval, both model paths, video lookup, injected-primary fallback and hostile-text probes now have measured results; see the latest Phase 2 live checkpoint. Billing settings and actual account quotas are not inferred from successful calls.
 - Existing reports in `BUILD_STATUS.md` describe historical verification, not verification of the planned redesign.
@@ -29,7 +31,7 @@ The user authorized sequential phases in one continuous run, with a check-in bef
 | 7 | Cross-feature regression and release readiness | Pre-packaging checks passed: 324 Android tests, three real-evidence replays, lint 0 errors / 6 warnings; user authorized Phase 8 with external gates recorded |
 | 8 | Final APK packaging, release checks, commit, and push | Artifact, deployment, automated checks and source push done; physical-device migration/usability acceptance remains pending |
 
-**Next action when a phone/user is available:** install the verified APK as an update, preserve existing private data, and perform `docs/DEVICE_TESTING.md`, especially migration, keyboard/splash and unaided recipe/check/workout/log tasks. Record real results and fix any observed issue in a subsequent authorized change. No further deployment, packaging or commits are needed simply to resume this handoff.
+**Next action:** install the verified 0.4.1 APK as an update and retry the reported recipes. Do not clear app data or uninstall. Physical-device/UI acceptance still requires the user/device. No further deployment, packaging or commits are needed simply to resume this handoff; this repair did not authorize a new commit/push.
 
 ## 2. Non-negotiable execution rules
 
@@ -477,6 +479,65 @@ Ignored sensitive/generated paths include `.poodles.properties`, `.env*`, `.dev.
 The comment threads inspected for these articles had no comments. No broad community consensus or measured usability improvement was established. Use official provider documentation for quotas and terms; verify application behavior with tests.
 
 ## 10. Checkpoint log
+
+### Recurring recipe pause and updated APK authorization — 2026-10-04
+
+- User reports the source-lookup pause still occurs on every recipe and explicitly requests fixing it, then building the APK. The previous context-border change is not yet packaged. This authorizes the updated APK and coordinated compatible backend repair; no new commit/push is requested.
+- Initial deployed Garden tomato search succeeds with default model consent: HTTP 200, Cloudflare, three sources, 5,372 ms. This does not reproduce the phone's failure or establish that every recipe works.
+- Source review and new regression tests identify a second shared failure: unreadable individual pages and empty search results create global retrieval-provider cooldowns, blocking later valid candidates and unrelated requests. The client also treats every 503 with Retry-After as a cached global pause and replaces useful error details with a generic message.
+- Repair work separates source-specific failures from actual provider quotas/outages, keeps valid later candidates eligible, preserves real Retry-After and budgets, and adds client transport regression tests. Package the context border and client correction together after checks, using the existing signing identity. Verification and artifact results are pending.
+
+#### Completed repair and release
+
+- `retrieval.js` now distinguishes unreadable/missing source content from an unavailable provider. A bad page no longer puts Exa/Tavily into a global cooldown or blocks later valid candidates. Source-specific failures return HTTP 422 without Retry-After. True upstream outages, quota refusals, cancellation and budget-integrity failures keep their appropriate handling. Raw network failures remain `provider_unavailable`, not misleading source-specific errors.
+- `ProviderBudget` no longer classifies failed storage as a quota refusal or extends an existing cooldown when reading a denied reservation. All charged attempts, true provider cooldowns and monthly/daily allowances remain preserved. No key rotation, paid provider, quota reset or consent bypass occurred.
+- `CloudModel` parses a bounded error envelope, preserves actionable messages and does not cache legacy source-specific 503 errors as a global pause. HTTP 429 and genuine provider 503 Retry-After still block calls for the proper scope. Its injectable OkHttp client enables real transport-level regression tests without external calls.
+- Added 22 backend retrieval/cooldown tests, 12 client HTTP/cooldown tests and one explicit opt-in production Android transport test. The final full backend run is **101 tests passed, 0 failed/cancelled/skipped**; dry run passed at **61.14 KiB / gzip 17.55 KiB**.
+- First 0.4.1 deployment `6191775b-9dca-4d5a-94f7-8e3f8602a330` passed health/authenticated contract checks. Ordinary **tiramisu** search returned HTTP 200, Cloudflare, **two readable sources (2,801 and 1,642 characters) in 10,259 ms**, while explicitly reporting another candidate could not be retrieved. This verifies usable sources survived partial retrieval failure, not a safe lactose-free tiramisu adaptation.
+- `LiveResearchTransportTest` made two synthetic requests through the actual configured Android `CloudModel`: an unsupported source was rejected without a cached pause, then the same model searched **Garden tomato salad** and the food service produced a recipe that passed its lactose/soy profile validation. The test passed in **7.026 seconds**. Unlike captured-evidence replays, HTTP was not substituted; it still ran on the build host, not a physical phone.
+- Final packaging command used `:app:assembleDebug`, `:app:testDebugUnitTest` and `:app:lintDebug`, with all four captured-evidence replay variables and `POODLES_LIVE_TRANSPORT=1` explicitly set. **BUILD SUCCESSFUL in 2m 2s; 339 tests, 0 failures/ignored; lint 0 errors / 6 existing dependency warnings.** The ordinary default suite skips opt-in live/replay tests when their environment variables are absent; that is not an acceptance pass.
+- A final backend-only correction classified raw network errors as provider outages; its additional regression passed in the 101-test run. Deployed final version **`1ad32992-840e-4d1c-9ea8-f0082d8c924b`**, then verified health 0.4.1, existing app credential, research route, retired-image rejection and invalid-request quota preservation. This error-label correction did not change Android or successful retrieval. The successful live recipe checks above preceded this final correction and were not needlessly repeated.
+- APK **0.4.1 / 8**: `app/build/outputs/apk/debug/app-debug.apk`, **61,124,855 bytes**, SHA-256 **`46ce620da90df4641dcbb5770c78bd215b17191fe8d77a5132a00b7671eca803`**. Signature v2 verifies; certificate SHA-256 **`384fc33f9cce3f83a132903dfa694b563300ae9267144370b6931ce27f3b47f8`** matches the old APK verified before replacement. Manifest version, required assets, configured backend, retired-runtime removal and absence of all four backend provider keys passed the APK audit.
+- `adb devices -l`: no attached devices. The APK is ready, but installation, physical-device migration/visual checks and the user's exact failing phone state were not tested. Install as an update and keep existing app data. Source/tests/docs remain uncommitted; no commit/push was requested or performed.
+- Secondary rationale: [Circuit Breaker Pattern](https://dev.to/delehq/the-circuit-breaker-pattern-stopping-cascading-failures-in-microservices-dkk), [delehq](https://dev.to/delehq), distinguishes dependency failure from excessively sensitive breakers that block otherwise healthy work; no discussion comments were returned. Regression tests, not the article, establish the observed bug and fix.
+
+### Post-release context/chat border — 2026-10-04
+
+- User requests a clear differentiating border between the context window and chat in recipes, workouts and ingredient checks.
+- Added an opt-in, full-width 2 dp divider to `ContextChatLayout`, using the theme's high-contrast `onSurfaceVariant` color. Enabled it in the recipe/ingredient workspace and workout workspace. The divider sits outside both scrolling regions, so it stays visible in normal and keyboard/compact layouts.
+- Existing uncommitted source-lookup repair and documentation changes are preserved. Kotlin compilation and 16 existing focused tests passed: `Phase3LayoutUiTest` (6), `Phase4FoodUiTest` (2), and `Phase5WorkoutFlowTest` (8), with no failures/errors/skips. These verify layout/navigation and feature behavior, not a physical-device visual inspection. This client UI change requires an updated APK before it appears on the installed app; no new packaging or installation has occurred.
+
+### Urgent post-release source-lookup repair — 2026-10-04
+
+- Current session: the user confirms Phase 8 delivery is done and again requests an urgent fix for recipes, workouts and ingredient checks always returning a source-check/retry error. This is post-release repair, not a restart of the eight-phase plan. The existing release-script and checkpoint edits were present at session start and are preserved.
+- Reproduced against production with the existing app credential and default `allowExternalModel: false`: HTTP 503 `providers_not_configured` in 167 ms. Health, credential, v2 route and invalid-request quota checks passed. This is a model eligibility gate failure before retrieval, not proof that internet sources are unavailable.
+- User reports recipes, workouts and ingredient checks repeatedly say source lookup needs a pause and never return output, and requests an ASAP fix. This is an urgent repair of the delivered production service, not an instruction to reset quotas, enable paid providers or silently opt users into Groq.
+- Starting tree is clean on `main` after release commit `dca53de`. Inspect the production failure using the default client consent settings; the earlier release smoke test explicitly enabled Groq and therefore did not establish the default path.
+- Source inspection found the deployed eligibility list contains Exa/Tavily/Groq/YouTube but not Cloudflare, while the v2 eligibility helper incorrectly requires Cloudflare to appear in that optional-provider list even though its pre-existing AI binding serves companion Chat. Investigate this alongside unnecessary synthesis/quota coupling: these feature clients parse retrieved evidence directly and must not lose valid retrieved source text solely because optional model notes fail.
+- The authorized emergency repair includes a compatible backend hotfix/deployment and production verification. Preserve all real provider budgets, source validation, user consent and local data. No new commit/push or APK rebuild is implied unless needed/requested; record actual results below.
+
+#### Repair and measured outcome
+
+- Fixed `eligible()` so the established Workers AI binding is available without requiring `cloudflare` in the optional external-provider attestation list. External accounts still require their key/attestation and Groq still requires user consent. All actual inference calls still reserve existing free compute; no quotas, cooldowns or stored data were reset.
+- Removed the model prerequisite from retrieval. Successfully retrieved pages now survive missing/unavailable/rate-limited models, oversized model context and rejected model evidence. The compatible v2 response uses `provider: retrieval_only`, empty claims and explicit uncertainty; it never invents a recipe or a safe-food verdict. Model/video enrichment is bounded by 20 seconds and the remaining request deadline. Invalid requests, missing retrieval, feature quotas, cancellation and budget failures remain errors.
+- Added regression coverage for production-like provider flags with default consent, no-model and failure cases, timeout/cancellation, budget integrity and a shared Android/backend retrieval-only fixture. `npm test --prefix backend`: **79 passed, 0 failed/cancelled/skipped**. `npm run check --prefix backend`: passed, **60.19 KiB / gzip 17.30 KiB**. Release script syntax and diff whitespace checks passed.
+- Non-packaging Android tests passed: **114 tests, no failures/errors/skips** across `ResearchContractTest`, `Phase4FoodRulesTest`, `Phase4FoodFlowTest`, `Phase5WorkoutTest` and `Phase5WorkoutFlowTest`. Application runtime source did not change; no new APK, version/signing change, commit or push was performed.
+- `node backend/scripts/release.mjs deploy` verified the existing account/Worker/app credential and deployed version **80705608-ee25-4467-b21d-7371c4a0450a**. The installed client credential was not rotated. Production health, authenticated status, invalid-request quota preservation and retired-image rejection passed before each live probe.
+- Release smoke probes now default to **`allowExternalModel: false`**, support fixed `--case` selections, optional `--search`, and ignored public-response captures. No live probe in this repair opted into Groq. Provider secrets, request headers and private profiles are never captured.
+
+| Production probe | Actual result |
+| --- | --- |
+| Garden tomato salad, direct URL | HTTP 200, Cloudflare, 1 source / 1,540 characters, 2,638 ms |
+| Garden tomato salad, ordinary search | HTTP 200, Cloudflare, 3 recipe sources, 4,368 ms |
+| MAGGI manufacturer search | HTTP 200, retrieval-only fallback, 3 sources / 2,510 + 1,386 + 1,036 characters, 6,895 ms |
+| NHS warm-up | HTTP 200, retrieval-only fallback, 1 source / 2,584 characters, 1,805 ms |
+| NHS strength | HTTP 200, retrieval-only fallback, 1 source / 3,336 characters, 1,403 ms |
+| NHS cooldown | HTTP 200, Cloudflare, 1 source / 2,051 characters, 2,565 ms |
+
+- An initial product smoke probe used an unverified direct product path and returned HTTP 503 `source_incomplete`, Retry-After 30 seconds. Removed that hardcoded path from the probe and used the actual manufacturer search after the cooldown. The failed probe is not a successful label verification. Manufacturer search returns FAQs/other variants without a complete matching current ingredient label; the client correctly returns **Need more information** rather than an all-clear result.
+- Captured actual production envelopes live under ignored `backend/.wrangler/live-evidence/production/`. With explicit capture environment variables, **three further Android replay tests passed with no skips**: Garden tomato recipe plus serving edits/restrictions; NHS 15-minute workout plus save/deduplicated completion; and retrieval-only manufacturer evidence yielding an uncertainty assessment. These substitute Android transport and are not physical-phone tests. Current test reports contain this three-test subset; the 114-test run immediately preceded it.
+- The common default-client outage is fixed in production. Arbitrary source layouts, incomplete product labels and unsupported recipe substitutions can still produce honest clarification instead of a finished result. No universal recipe/workout success or complete device acceptance is claimed.
+- Community rationale: [AI as an Optional Capability, Not an Application Dependency](https://dev.to/qnbs/ai-as-an-optional-capability-not-an-application-dependency-20jf), by [qnbs](https://dev.to/qnbs), and its comments support containing optional-model failure without fabricating fallback output. This is one secondary design report; the measured tests/live results above establish this repair.
 
 ### Phase 8 source delivery and handoff — 2026-10-04
 

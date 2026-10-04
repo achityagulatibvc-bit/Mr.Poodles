@@ -1,11 +1,12 @@
 // Authorized release operations only. Secrets stay in memory/stdin, never command arguments or output.
-import { readFile } from 'node:fs/promises';
+import { readFile, lstat, mkdir, writeFile } from 'node:fs/promises';
 import { parseEnv } from 'node:util';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sourceRegistry } from '../src/retrieval.js';
 import { validateResearchAnswer } from '../src/research.js';
+import { readJsonLimited } from '../src/bounded-http.js';
 
 const root = new URL('../', import.meta.url);
 const cwd = fileURLToPath(root);
@@ -13,6 +14,39 @@ const mode = process.argv[2] || 'check';
 const sensitive = [];
 const redact = text => sensitive.reduce((value, secret) => value.replaceAll(secret, '[redacted]'), String(text));
 const requireValue = (value, code) => { if (!value) throw new Error(code); return value; };
+// One fixed public case per invocation; no user profile, history or automatic retries.
+const liveCases = {
+  recipe: { task: 'recipe', subject: 'Garden tomato salad recipe',
+    url: 'https://www.bbcgoodfood.com/recipes/garden-tomato-salad' },
+  tiramisu: { task: 'recipe', subject: 'tiramisu recipe' },
+  oats: { task: 'recipe', subject: 'overnight oats recipe' },
+  workout: { task: 'workout', subject: 'NHS beginner warm-up instructions',
+    url: 'https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/' },
+  'workout-strength': { task: 'workout', subject: 'NHS wall strength instructions',
+    url: 'https://www.nhs.uk/live-well/exercise/strength-exercises/' },
+  'workout-cooldown': { task: 'workout', subject: 'NHS cooldown instructions',
+    url: 'https://www.nhs.uk/live-well/exercise/how-to-stretch-after-exercising/' },
+  food_check: { task: 'food_check', subject: 'MAGGI 2-Minute Masala Noodles', brand: 'MAGGI', variant: 'Masala', country: 'India' },
+  nutrition: { task: 'food_log', subject: 'banana nutrition per 100 grams',
+    url: 'https://tools.myfooddata.com/nutrition-facts/173944/100g' },
+};
+const captureCases = { recipe: 'phase7-tomato', tiramisu: 'tiramisu', oats: 'oats', workout: 'workout-nhs-warmup',
+  'workout-strength': 'workout-nhs-strength', 'workout-cooldown': 'workout-nhs-cooldown',
+  food_check: 'product', nutrition: 'nutrition' };
+const publicJson = value => JSON.stringify(value, (_key, item) => typeof item === 'string' ? redact(item) : item, 2);
+function sourceSummary(source) {
+  let url = 'invalid_public_url';
+  try {
+    const parsed = new URL(source.url);
+    if (parsed.protocol === 'https:') url = redact(`${parsed.origin}${parsed.pathname}`);
+  } catch { /* Never log malformed source URLs verbatim. */ }
+  return { url, title: redact(String(source.title || '')).replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, 240),
+    chars: typeof source.excerpt === 'string' ? source.excerpt.length : 0 };
+}
+async function requireDirectory(directory) {
+  const info = await lstat(directory);
+  requireValue(info.isDirectory() && !info.isSymbolicLink(), 'capture_directory_invalid');
+}
 const cliEnvironment = { ...process.env, WRANGLER_SEND_METRICS: 'false' };
 async function wrangler(args, input) {
   return new Promise((resolve, reject) => {
@@ -34,11 +68,25 @@ async function wrangler(args, input) {
 }
 async function fetchJson(url, headers = {}, options = {}) {
   const response = await fetch(url, { ...options, headers, redirect: 'error', signal: AbortSignal.timeout(60000) });
-  const body = await response.json();
+  const body = await readJsonLimited(response);
   return { response, body };
 }
 try {
   requireValue(['check', 'deploy', 'verify'].includes(mode), 'unknown_release_mode');
+  const args = process.argv.slice(3);
+  requireValue(args.every(arg => ['--live', '--capture', '--with-groq', '--search'].includes(arg) || arg.startsWith('--case=')), 'unknown_release_option');
+  const selections = args.filter(arg => arg.startsWith('--case='));
+  requireValue(selections.length <= 1, 'multiple_live_cases');
+  const caseName = selections.length ? selections[0].slice('--case='.length) : 'nutrition';
+  requireValue(Object.hasOwn(liveCases, caseName), 'unknown_live_case');
+  requireValue(!args.length || mode === 'verify', 'live_options_require_verify');
+  requireValue(!args.length || args.includes('--live'), 'live_options_require_live');
+  const captureDirectory = new URL('.wrangler/live-evidence/production/', root);
+  if (args.includes('--capture')) {
+    // Reuse the ignored evidence parent; keep historical local captures intact.
+    await requireDirectory(new URL('.wrangler/', root));
+    await requireDirectory(new URL('.wrangler/live-evidence/', root));
+  }
   const settings = Object.fromEntries((await readFile(new URL('../../.poodles.properties', import.meta.url), 'utf8'))
     .split(/\r?\n/).filter(line => line.includes('=') && !line.trim().startsWith('#')).map(line => [line.slice(0, line.indexOf('=')).trim(), line.slice(line.indexOf('=') + 1).trim()]));
   const origin = new URL(settings['backend.url']);
@@ -57,7 +105,7 @@ try {
   const appHeaders = { Authorization: `Bearer ${appToken}`, 'Content-Type': 'application/json' };
   if (mode === 'verify') {
     const health = await fetchJson(new URL('/health', origin));
-    requireValue(health.response.ok && health.body.version === '0.4.0', 'deployed_version_mismatch');
+    requireValue(health.response.ok && health.body.version === '0.4.1', 'deployed_version_mismatch');
     const before = await fetchJson(new URL('/v1/status', origin), appHeaders);
     requireValue(before.response.ok && before.body.chat && before.body.assistance, 'app_credential_or_quota_status_failed');
     const invalid = await fetchJson(new URL('/v2/research', origin), appHeaders, { method: 'POST', body: '{}' });
@@ -75,19 +123,41 @@ try {
       const requestId = randomUUID();
       const started = Date.now();
       const live = await fetchJson(new URL('/v2/research', origin), appHeaders, { method: 'POST', body: JSON.stringify({
-        requestId, profileRevision: 0, task: 'food_log', subject: 'banana nutrition per 100 grams',
-        url: 'https://tools.myfooddata.com/nutrition-facts/173944/100g', allowExternalModel: true,
+        ...liveCases[caseName], ...(args.includes('--search') ? { url: undefined } : {}), requestId, profileRevision: 0,
+        allowExternalModel: process.argv.includes('--with-groq'),
       }) });
       if (!live.response.ok) {
-        console.log(JSON.stringify({ check: 'deployed_research', status: live.response.status,
+        console.log(JSON.stringify({ check: 'deployed_research', case: caseName, status: live.response.status,
           code: /^[a-z_]+$/.test(live.body.error?.code || '') ? live.body.error.code : 'unknown',
-          retryAfter: live.response.headers.get('Retry-After'), latencyMs: Date.now() - started }));
+          retryAfter: /^\d{1,10}$/.test(live.response.headers.get('Retry-After') || '') ? live.response.headers.get('Retry-After') : null,
+          latencyMs: Date.now() - started }));
         process.exitCode = 2;
       } else {
-        requireValue(live.body.requestId === requestId && live.body.snapshot?.requestId === requestId, 'deployed_request_identity_failed');
+        requireValue(live.body.apiVersion === 2 && live.body.profileRevision === 0 &&
+          live.body.requestId === requestId && live.body.snapshot?.requestId === requestId, 'deployed_request_identity_failed');
         validateResearchAnswer(live.body.answer, live.body.snapshot);
-        console.log(JSON.stringify({ check: 'deployed_research', status: 200, provider: live.body.provider,
-          sources: live.body.snapshot.sources.length, validatedCitations: true, latencyMs: Date.now() - started }));
+        requireValue(Array.isArray(live.body.snapshot.sources) && live.body.snapshot.sources.length > 0, 'deployed_sources_missing');
+        console.log(JSON.stringify({ check: 'deployed_research', case: caseName, status: live.response.status,
+          provider: ['cloudflare', 'groq', 'retrieval_only'].includes(live.body.provider) ? live.body.provider : 'unknown',
+          sources: live.body.snapshot.sources.map(sourceSummary), validatedCitations: true, latencyMs: Date.now() - started }));
+        if (args.includes('--capture')) {
+          await mkdir(captureDirectory, { recursive: false, mode: 0o700 }).catch(error => {
+            if (error.code !== 'EEXIST') throw error;
+          });
+          await requireDirectory(captureDirectory);
+          // Android replay reads response, including full public excerpts and citation identities.
+          // No request, headers, credentials, local configuration or private profile is captured.
+          const response = Object.fromEntries(['apiVersion', 'requestId', 'profileRevision', 'snapshot', 'video',
+            'answer', 'provider', 'limitations'].map(key => [key, live.body[key]]));
+          const captureCase = captureCases[caseName];
+          const destination = new URL(`${captureCase}.json`, captureDirectory);
+          const existing = await lstat(destination).catch(error => { if (error.code !== 'ENOENT') throw error; });
+          requireValue(!existing || (existing.isFile() && !existing.isSymbolicLink() && existing.nlink === 1), 'capture_file_invalid');
+          await writeFile(destination, publicJson({ case: captureCase, capturedAt: new Date().toISOString(), response }),
+            { encoding: 'utf8', mode: 0o600 });
+          console.log(JSON.stringify({ check: 'capture', case: caseName,
+            path: `backend/.wrangler/live-evidence/production/${captureCase}.json`, synthetic: true }));
+        }
       }
     }
   } else {

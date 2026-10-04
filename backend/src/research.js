@@ -169,6 +169,7 @@ export async function synthesize(request, snapshot, env, budget, signal, fetcher
       return { answer, provider };
     } catch (error) {
       if (error.status === 499 || signal?.aborted) throw new ResearchError('request_cancelled', 499);
+      if (['budget_unavailable', 'invalid_budget'].includes(error.code)) throw error;
       if (stage === 'validation' && !(error instanceof ResearchError)) error = new ResearchError('invalid_model_response', 502);
       if (stage === 'validation' && error.code === 'invalid_request') {
         error = new ResearchError('invalid_evidence', 502); error.evidenceIssue = 'output_shape';
@@ -202,17 +203,38 @@ export async function synthesize(request, snapshot, env, budget, signal, fetcher
 
 export async function runResearch(body, env, quota, signal, fetcher = fetch) {
   const request = validateResearch(body);
-  if (!['exa', 'tavily'].some(p => eligible(env, p)) || !['cloudflare', 'groq'].some(p => eligible(env, p) && (p === 'cloudflare' || request.allowExternalModel === true))) throw new ResearchError('providers_not_configured');
+  if (!['exa', 'tavily'].some(p => eligible(env, p))) throw new ResearchError('providers_not_configured');
   return bounded(async inner => {
+    const started = Date.now();
     const feature = await quota.fetch(new Request('https://quota/v2/feature', { method: 'POST', body: JSON.stringify({ task: request.task }) }));
     if (!feature.ok) throw new ResearchError('free_limit', 429, Number(feature.headers.get('Retry-After') || 60), feature.headers.get('X-Poodles-Limit') || 'research_provider');
     const budget = new ProviderBudget(quota, inner);
     const snapshot = await retrieve(request, env, budget, inner, fetcher);
-    const video = request.task === 'workout' ? await videoLookup(request, env, budget, inner, fetcher) : { video: null };
-    const synthesis = await synthesize(request, snapshot, env, budget, inner, fetcher);
+    let video = { video: null, ...(request.task === 'workout' ? { limitation: 'Video lookup did not finish; article evidence is kept.' } : {}) };
+    // The client validates and parses full retrieved pages. Optional model notes must
+    // never discard those pages or masquerade as generated facts when unavailable.
+    let synthesis = { provider: 'retrieval_only', answer: {
+      message: "I'm here. We can look at the linked information together.", claims: [],
+      uncertainties: ['AI research notes are unavailable. Retrieved text may be incomplete and does not establish safety or suitability.'],
+    } };
+    const optionalTimeout = Math.min(20000, 44000 - (Date.now() - started));
+    if (optionalTimeout > 0) {
+      try {
+        await bounded(async optionalSignal => {
+          const optionalBudget = new ProviderBudget(quota, optionalSignal);
+          if (request.task === 'workout') video = await videoLookup(request, env, optionalBudget, optionalSignal, fetcher);
+          synthesis = await synthesize(request, snapshot, env, optionalBudget, optionalSignal, fetcher);
+        }, inner, optionalTimeout);
+      } catch (error) {
+        checkAbort(inner);
+        if (!(error instanceof ResearchError) || !['providers_not_configured', 'generation_unavailable', 'free_limit',
+          'request_too_large', 'provider_timeout'].includes(error.code)) throw error;
+      }
+    }
     checkAbort(inner);
     return { apiVersion: 2, requestId: request.requestId, profileRevision: request.profileRevision,
       snapshot, video: video.video, ...synthesis, limitations: [...snapshot.limitations,
-        'The model reviewed selected excerpts, not every part of the retrieved pages.', ...(video.limitation ? [video.limitation] : [])] };
+        synthesis.provider === 'retrieval_only' ? 'Retrieval only; no model-generated research notes are included.' :
+          'The model reviewed selected excerpts, not every part of the retrieved pages.', ...(video.limitation ? [video.limitation] : [])] };
   }, signal, 45000);
 }
