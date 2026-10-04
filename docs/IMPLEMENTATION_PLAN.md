@@ -4,13 +4,13 @@ Last updated: 2026-10-04.
 
 ## 1. Resume here
 
-**Phase 8 is authorized and in progress. The user answered “krde” to the explicit pre-packaging request covering APK packaging, final commit/push, and production backend deployment permission. Phase 7's 324-test and lint results remain recorded. Verify deployment target and signing continuity, then package and audit; never claim unavailable device/user checks passed.**
+**0.4.0 / code 7 is built, audited, deployed and source-pushed. Release code commit `a88b31c` is on `origin/main`; this documentation follow-up records the verified outcome. APK: `app/build/outputs/apk/debug/app-debug.apk` (61,124,859 bytes). All 324 Android and 67 backend tests passed. Phase 8 physical-device upgrade/usability acceptance remains pending because no device was attached. Do not restart implementation phases or repackage merely to resume.**
 
-The user first authorized Phase 2 on 2026-10-03 with “start phase 2”, then authorized all remaining phases and final packaging. The latest request asks to complete every remaining phase in one run and interrupt only at the end, before APK bundling. Record the request to minimize interruptions and require a pre-packaging check-in. The governing phase-by-phase acceptance/checkpoint/stop discipline still applies; this request does not supply missing account facts or establish completed acceptance. Packaging, commit, and push remain final Phase 8 operations. No explicit production backend deployment authorization has been supplied.
+The user authorized sequential phases in one continuous run, with a check-in before APK packaging. That check-in occurred, and “krde” authorized Phase 8 packaging, coordinated production backend deployment and final commit/push. Actual results and unperformed device gates are recorded below; authorization does not turn an unperformed check into a pass.
 
 - Baseline: commit `983459e` (`Fix free quotas, recipe variety and distress responses`).
-- Branch: `main`, tracking `origin/main`; the working tree was clean before Phase 0. All Phase 1–7 source, test and documentation changes are uncommitted; preserve them, including untracked files.
-- Application baseline: version `0.3.1`, version code `6`.
+- Branch: `main`, tracking `origin/main`. All intended Phase 1–8 source, tests and documentation were committed as `a88b31c` and pushed. APKs, captured evidence, credentials and signing files remain ignored. Check current Git status before editing; subsequent user changes must be preserved.
+- Application release: version `0.4.0`, version code `7`; previous baseline was `0.3.1` / `6`.
 - Foundations, research transport, shared navigation, sourced recipe/food-check/workout workspaces, natural-language diary and planner/shopping are integrated locally. These use strict evidence parsers and limited supported follow-ups; they are not unrestricted AI generation. Live coverage limitations remain explicit.
 - Exa, Tavily, Groq and YouTube keys/eligibility flags are present in ignored local configuration. The user previously reported signup without payment/phone/KYC. Live retrieval, both model paths, video lookup, injected-primary fallback and hostile-text probes now have measured results; see the latest Phase 2 live checkpoint. Billing settings and actual account quotas are not inferred from successful calls.
 - Existing reports in `BUILD_STATUS.md` describe historical verification, not verification of the planned redesign.
@@ -25,11 +25,11 @@ The user first authorized Phase 2 on 2026-10-03 with “start phase 2”, then a
 | 3 | Easy navigation, shared chat layout, settings, and splash | Complete: 93 Android/JVM/Compose tests; lint 0 errors, 10 existing warnings |
 | 4 | Sourced recipe chat and text-only food checks | Complete local acceptance; 140 Android tests and lint pass; 13 focused backend removal tests pass |
 | 5 | Sourced workout chat and related YouTube links | Complete local acceptance; 24 service/domain and 8 integration tests pass; lint passes |
-| 6 | AI food logging, improved planning, shopping, and diary | Complete local acceptance; 63 new domain/integration/UI tests; final regression follows |
-| 7 | Cross-feature regression and release readiness | Pre-packaging checks passed: 324 Android tests, three real-evidence replays, lint 0 errors / 6 warnings; awaiting Phase 8 confirmation with external gates recorded |
-| 8 | Final APK packaging, release checks, commit, and push | In progress; required check-in completed and deployment/packaging/commit/push authorized by “krde” |
+| 6 | AI food logging, improved planning, shopping, and diary | Complete local acceptance; covered by final 324-test regression |
+| 7 | Cross-feature regression and release readiness | Pre-packaging checks passed: 324 Android tests, three real-evidence replays, lint 0 errors / 6 warnings; user authorized Phase 8 with external gates recorded |
+| 8 | Final APK packaging, release checks, commit, and push | Artifact, deployment, automated checks and source push done; physical-device migration/usability acceptance remains pending |
 
-**Next action:** obtain the required Phase 8 confirmation. Ask separately for production backend deployment permission; it has not been granted. Then verify signing/configuration and proceed with authorized packaging, available device checks, commit and push. Preserve all uncommitted work and do not equate captured-evidence replay with live Android HTTP or intended-user acceptance.
+**Next action when a phone/user is available:** install the verified APK as an update, preserve existing private data, and perform `docs/DEVICE_TESTING.md`, especially migration, keyboard/splash and unaided recipe/check/workout/log tasks. Record real results and fix any observed issue in a subsequent authorized change. No further deployment, packaging or commits are needed simply to resume this handoff.
 
 ## 2. Non-negotiable execution rules
 
@@ -477,6 +477,13 @@ Ignored sensitive/generated paths include `.poodles.properties`, `.env*`, `.dev.
 The comment threads inspected for these articles had no comments. No broad community consensus or measured usability improvement was established. Use official provider documentation for quotas and terms; verify application behavior with tests.
 
 ## 10. Checkpoint log
+
+### Phase 8 source delivery and handoff — 2026-10-04
+
+- Inspected status, diffs, recent commits and the intended GitHub remote before committing. Staged only the reviewed application/backend/scripts/fixtures/docs. The staged audit passed **108 added/modified files**, with all **five configured credentials absent** and no APK/AAB/signing/local configuration files. Three authorized retired files were deletions, for **111 changed files** total. An initial audit rule matched its own example private-key string; anchoring detection to an actual PEM header line fixed that false positive, and the audit then passed.
+- Created source commit **`a88b31c` — `Add sourced chats, durable diary and meal planning`**. Normal commit succeeded and `git push origin main` succeeded: `983459e..a88b31c`. No force push, hook bypass, amend, Git configuration change or binary force-add was used.
+- This follow-up changes documentation only, recording the completed source push and next device-dependent work. Application and deployed backend code still match the tested artifact's release source. APK hash/certificate and deployment ID remain in `docs/RELEASE_0.4.0.md`.
+- Delivery work is finished. **Full Phase 8 device acceptance is not complete:** no device was attached, so upgrade migration, OEM keyboard/splash and intended-user usability remain untested. Do not claim all acceptance passed or reinstall by uninstalling first.
 
 ### Phase 8 artifact and deployment verification — 2026-10-04
 

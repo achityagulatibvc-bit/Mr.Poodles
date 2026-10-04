@@ -41,4 +41,4 @@ Supported-source limitations remain: unknown/mismatched food evidence stays unkn
 
 ## Source delivery
 
-At this record's initial creation, the artifact and backend checks above had completed; final intended-source commit/push was the next authorized operation. Actual source delivery identifiers are recorded in the final master-plan checkpoint after Git verification.
+Release source commit: **`a88b31c` — `Add sourced chats, durable diary and meal planning`**. It was pushed successfully to `origin/main` at `https://github.com/achityagulatibvc-bit/Mr.Poodles.git`. A documentation-only follow-up records this actual outcome; application/backend code and the APK remain unchanged. The staged-source audit confirmed the five configured credential values were absent and no binary/signing/local configuration was staged.
